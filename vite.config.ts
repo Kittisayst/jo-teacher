@@ -13,6 +13,8 @@ function getLessonEntries() {
   )
 }
 
+const base = process.env.VITE_BASE ?? '/'
+
 const NAV_HTML = `
 <style>
   .jo-nav{position:fixed;top:0;left:0;right:0;z-index:9999;
@@ -25,7 +27,7 @@ const NAV_HTML = `
   .jo-nav-spacer{height:44px}
 </style>
 <nav class="jo-nav">
-  <a href="/">&#8592; ໜ້າຫຼັກ</a>
+  <a href="${base}">&#8592; ໜ້າຫຼັກ</a>
 </nav>
 <div class="jo-nav-spacer"></div>`
 
@@ -43,6 +45,7 @@ function injectLessonNav() {
 }
 
 export default defineConfig({
+  base,
   plugins: [react(), tailwindcss(), injectLessonNav()],
   build: {
     rollupOptions: {

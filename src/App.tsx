@@ -20,7 +20,7 @@ const metaModules = import.meta.glob<{ default: LessonMeta }>(
 const allLessons = Object.entries(metaModules)
   .map(([path, mod]) => {
     const id = path.match(/\.\.\/subjects\/(.+)\/meta\.json/)?.[1] ?? ''
-    return { id, ...mod.default, url: `/subjects/${id}/` }
+    return { id, ...mod.default, url: `${import.meta.env.BASE_URL}subjects/${id}/` }
   })
   .sort((a, b) => (a.order ?? 99) - (b.order ?? 99))
 
