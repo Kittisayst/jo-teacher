@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ໂປຣແກຣມຈຳລອງການຕິດຕັ້ງ Windows 11 ຜ່ານ USB</title>
+    <!-- ນໍາເຂົ້າ Tailwind CSS ແລະ Font ພາສາລາວ -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;600;700&family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', 'Noto Sans Lao', sans-serif;
+            user-select: none;
+        }
+        /* ອານіເມຊັນການໂຫຼດແບບຈຸດໝູນຂອງ Windows */
+        .win-spinner {
+            width: 40px;
+            height: 40px;
+            position: relative;
+        }
+        .win-spinner-dot {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            animation: winRotate 2s infinite ease-in-out;
+        }
+        .win-spinner-dot::before {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 4px;
+            background-color: white;
+            border-radius: 50%;
+        }
+        .win-spinner-dot:nth-child(2) { animation-delay: 0.15s; }
+        .win-spinner-dot:nth-child(3) { animation-delay: 0.3s; }
+        .win-spinner-dot:nth-child(4) { animation-delay: 0.45s; }
+        .win-spinner-dot:nth-child(5) { animation-delay: 0.6s; }
+        
+        @keyframes winRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- ສ່ວນຫົວ (Header) -->
+    <header class="bg-slate-900 border-b border-slate-800 py-3 px-6 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">💻</span>
+                <div>
+                    <h1 class="text-lg font-bold text-sky-400">ໂປຣແກຣມຈຳລອງການຕິດຕັ້ງ Windows 11</h1>
+                    <p class="text-[11px] text-slate-400">ສື່ການສອນພື້ນຖານການຊ່າງໄອທີ ແລະ ລະບົບປະຕິບັດການ</p>
+                </div>
+            </div>
+            <!-- Progress Steps Indicator -->
+            <div class="flex items-center gap-1.5 text-xs">
+                <span id="step-badge-1" class="px-2.5 py-1 rounded bg-sky-500 text-slate-950 font-bold transition-all">1. BIOS</span>
+                <span class="text-slate-600">➔</span>
+                <span id="step-badge-2" class="px-2.5 py-1 rounded bg-slate-800 text-slate-400 transition-all">2. Windows Setup</span>
+                <span class="text-slate-600">➔</span>
+                <span id="step-badge-3" class="px-2.5 py-1 rounded bg-slate-800 text-slate-400 transition-all">3. OOBE Setup</span>
+                <span class="text-slate-600">➔</span>
+                <span id="step-badge-4" class="px-2.5 py-1 rounded bg-slate-800 text-slate-400 transition-all">4. Desktop</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ສ່ວນເນື້ອຫາຫຼັກ: ແບ່ງເປັນ 2 ຝັ່ງ (ຈໍ Simulator & ແຜງຄຳແນະນຳ) -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        
+        <!-- ຝັ່ງຊ້າຍ: Virtual Monitor (16:9 Simulator) - 7 ຄໍລຳ -->
+        <section class="lg:col-span-8 flex flex-col">
+            <div class="bg-slate-900 border-4 border-slate-700 rounded-3xl overflow-hidden shadow-2xl flex-grow flex flex-col min-h-[500px] relative aspect-video justify-center items-center" id="virtual-monitor">
+                
+                <!-- [SCREEN 0] START COMPUTER / BOOT KEY -->
+                <div id="scr-boot" class="absolute inset-0 bg-black flex flex-col justify-between p-10 items-center text-center">
+                    <div class="flex-grow flex items-center justify-center">
+                        <!-- Manufacturer Logo -->
+                        <div class="text-4xl md:text-5xl font-bold tracking-widest text-slate-200 uppercase border-4 border-slate-200 px-6 py-2">
+                            LaoTech PC
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center gap-2">
+                        <p class="text-xs text-slate-500 animate-pulse">ກຳລັງເປີດລະບົບເຄື່ອງຄອມພິວເຕີ...</p>
+                        <button onclick="pressBootKey()" class="px-6 py-3 bg-red-600 hover:bg-red-500 active:scale-95 text-white font-bold rounded-xl text-sm transition-all shadow-lg animate-bounce cursor-pointer">
+                            ກົດ [ F12 ] ໄວໆເພື່ອເຂົ້າ Boot Menu ⌨️
+                        </button>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 1] BIOS / BOOT MENU -->
+                <div id="scr-bios" class="hidden absolute inset-0 bg-blue-950 text-sky-200 font-mono p-8 flex flex-col justify-between text-left">
+                    <div>
+                        <h2 class="text-lg font-bold border-b border-sky-800 pb-2 text-white flex justify-between">
+                            <span>Phoenix SecureCore Technology Setup Utility</span>
+                            <span class="text-xs text-yellow-400">BIOS MENU</span>
+                        </h2>
+                        <div class="mt-6">
+                            <p class="text-sm text-yellow-400 font-bold mb-4">Please select boot device (ເລືອກອຸປະກອນທີ່ຈະໃຊ້ບູດລະບົບ):</p>
+                            <div class="space-y-2 max-w-md">
+                                <div class="p-3 bg-blue-900/40 border border-blue-800 rounded text-xs text-slate-400 flex justify-between items-center opacity-60">
+                                    <span>1. SATA HDD: ST1000DM003-1CH162</span>
+                                    <span class="text-[10px]">ຮາດດິດເກົ່າ (ບໍ່ມີ OS)</span>
+                                </div>
+                                <div class="p-3 bg-blue-900/40 border border-blue-800 rounded text-xs text-slate-400 flex justify-between items-center opacity-60">
+                                    <span>2. CD-ROM: TSSTcorp CDDVDW SH-224DB</span>
+                                    <span class="text-[10px]">ຊ່ອງອ່ານແຜ່ນ CD</span>
+                                </div>
+                                <!-- ຕົວເລືອກທີ່ຖືກຕ້ອງ -->
+                                <button onclick="selectUSBBoot()" class="w-full text-left p-3 bg-sky-500 text-slate-950 font-bold rounded text-xs flex justify-between items-center hover:bg-sky-400 transition-all border border-sky-300 shadow-md cursor-pointer animate-pulse">
+                                    <span>3. UEFI: USB Flash Drive 3.0 partition 1</span>
+                                    <span class="text-[10px] bg-slate-950 text-sky-400 px-2 py-0.5 rounded">USB ຕິດຕັ້ງ Windows</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-[10px] text-sky-500 border-t border-sky-900 pt-2 flex justify-between">
+                        <span>↑↓: Move Highlight</span>
+                        <span>Enter: Select Device</span>
+                        <span>F10: Save & Exit</span>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 2] WINDOWS LOADING (BLACK SCREEN WITH WINDOWS LOGO & SPINNER) -->
+                <div id="scr-win-load" class="hidden absolute inset-0 bg-black flex flex-col items-center justify-center gap-16">
+                    <!-- Windows Blue Logo -->
+                    <div class="grid grid-cols-2 gap-1.5 w-16 h-16 transform rotate-5 text-sky-500">
+                        <div class="bg-sky-500 w-7 h-7"></div>
+                        <div class="bg-sky-500 w-7 h-7"></div>
+                        <div class="bg-sky-500 w-7 h-7"></div>
+                        <div class="bg-sky-500 w-7 h-7"></div>
+                    </div>
+                    <!-- Spinner -->
+                    <div class="win-spinner flex justify-center items-center">
+                        <div class="win-spinner-dot"></div>
+                        <div class="win-spinner-dot"></div>
+                        <div class="win-spinner-dot"></div>
+                        <div class="win-spinner-dot"></div>
+                        <div class="win-spinner-dot"></div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 3] WINDOWS SETUP: LANGUAGE & REGION (PURPLE SCREEN) -->
+                <div id="scr-setup-lang" class="hidden absolute inset-0 bg-gradient-to-tr from-[#1f1635] to-[#3a205a] flex items-center justify-center p-6">
+                    <div class="bg-[#2d2146] border border-[#443366] w-full max-w-lg rounded-lg shadow-2xl p-6 flex flex-col justify-between min-h-[360px] text-left">
+                        <div>
+                            <!-- Title Bar -->
+                            <div class="flex items-center gap-2 mb-4 border-b border-[#443366] pb-3">
+                                <div class="grid grid-cols-2 gap-0.5 w-4 h-4 transform rotate-5 text-sky-400">
+                                    <div class="bg-sky-400 w-1.5 h-1.5"></div><div class="bg-sky-400 w-1.5 h-1.5"></div>
+                                    <div class="bg-sky-400 w-1.5 h-1.5"></div><div class="bg-sky-400 w-1.5 h-1.5"></div>
+                                </div>
+                                <span class="text-sm font-semibold text-slate-300">Windows Setup</span>
+                            </div>
+                            
+                            <h3 class="text-base font-bold text-white mb-4">ເລືອກພາສາ ແລະ ຮູບແບບແປ້ນພິມ</h3>
+                            
+                            <div class="space-y-3 text-xs">
+                                <div>
+                                    <label class="block text-slate-400 mb-1">Language to install:</label>
+                                    <select class="w-full bg-[#1c142e] border border-[#553f7c] rounded p-2 text-white">
+                                        <option>English (United States)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 mb-1">Time and currency format:</label>
+                                    <select class="w-full bg-[#1c142e] border border-[#553f7c] rounded p-2 text-white">
+                                        <option>English (United States)</option>
+                                        <option>Lao (Laos)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 mb-1">Keyboard or input method:</label>
+                                    <select class="w-full bg-[#1c142e] border border-[#553f7c] rounded p-2 text-white">
+                                        <option>US</option>
+                                        <option>Lao</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-3 mt-6 border-t border-[#443366] pt-4">
+                            <button onclick="nextSetupStep('scr-setup-lang', 'scr-setup-now')" class="px-5 py-2 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded text-xs shadow transition-all cursor-pointer">Next ➔</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 4] WINDOWS SETUP: INSTALL NOW -->
+                <div id="scr-setup-now" class="hidden absolute inset-0 bg-gradient-to-tr from-[#1f1635] to-[#3a205a] flex items-center justify-center p-6">
+                    <div class="bg-[#2d2146] border border-[#443366] w-full max-w-lg rounded-lg shadow-2xl p-6 flex flex-col justify-between min-h-[360px] items-center text-center">
+                        <div class="w-full flex items-center gap-2 mb-4 border-b border-[#443366] pb-3 text-left">
+                            <div class="grid grid-cols-2 gap-0.5 w-4 h-4 transform rotate-5 text-sky-400">
+                                <div class="bg-sky-400 w-1.5 h-1.5"></div><div class="bg-sky-400 w-1.5 h-1.5"></div>
+                                <div class="bg-sky-400 w-1.5 h-1.5"></div><div class="bg-sky-400 w-1.5 h-1.5"></div>
+                            </div>
+                            <span class="text-sm font-semibold text-slate-300">Windows Setup</span>
+                        </div>
+                        
+                        <div class="flex-grow flex flex-col items-center justify-center gap-6">
+                            <!-- Large Windows Logo -->
+                            <div class="grid grid-cols-2 gap-1 w-12 h-12 transform rotate-5 text-sky-400">
+                                <div class="bg-sky-400 w-5.5 h-5.5"></div><div class="bg-sky-400 w-5.5 h-5.5"></div>
+                                <div class="bg-sky-400 w-5.5 h-5.5"></div><div class="bg-sky-400 w-5.5 h-5.5"></div>
+                            </div>
+                            <button onclick="nextSetupStep('scr-setup-now', 'scr-setup-key')" class="px-8 py-3 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg text-sm shadow-lg transition-all hover:scale-105 cursor-pointer">
+                                Install now (ຕິດຕັ້ງຕອນນີ້)
+                            </button>
+                        </div>
+                        
+                        <div class="w-full flex justify-between text-[10px] text-slate-400 mt-4 border-t border-[#443366] pt-2">
+                            <span class="hover:underline cursor-pointer">What to know before installing Windows</span>
+                            <span class="hover:underline cursor-pointer">Repair your computer</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 5] WINDOWS SETUP: ACTIVATE WINDOWS (KEY) -->
+                <div id="scr-setup-key" class="hidden absolute inset-0 bg-gradient-to-tr from-[#1f1635] to-[#3a205a] flex items-center justify-center p-6">
+                    <div class="bg-[#2d2146] border border-[#443366] w-full max-w-xl rounded-lg shadow-2xl p-6 flex flex-col justify-between min-h-[380px] text-left">
+                        <div>
+                            <div class="flex items-center gap-2 mb-4 border-b border-[#443366] pb-3">
+                                <span class="text-sm font-semibold text-slate-300">Windows Setup</span>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-2">Activate Windows (ຢືນຢັນລິຂະສິດ)</h3>
+                            <p class="text-slate-300 text-xs mb-4 leading-relaxed">
+                                ຖ້າເຈົ້າມີລະຫັດລິຂະສິດ (Product Key), ສາມາດກອກໃສ່ຊ່ອງດ້ານລຸ່ມນີ້ໄດ້. ແຕ່ຖ້າບໍ່ມີ ຫຼື ຢາກຕິດຕັ້ງໄປທົດລອງໃຊ້ງານກ່ອນ ໃຫ້ກົດປຸ່ມ <b>"I don't have a product key"</b> ດ້ານລຸ່ມ.
+                            </p>
+                            <input type="text" placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX" class="w-full bg-[#1c142e] border border-[#553f7c] rounded p-2 text-white text-xs uppercase tracking-widest placeholder:tracking-normal placeholder:lowercase mb-4" disabled>
+                        </div>
+                        <div class="flex justify-between items-center mt-6 border-t border-[#443366] pt-4">
+                            <!-- ປຸ່ມຫຼັກໃນການສອນ: ຕິດຕັ້ງແບບທົດລອງໃຊ້ງານ -->
+                            <button onclick="nextSetupStep('scr-setup-key', 'scr-setup-version')" class="text-xs text-sky-400 hover:underline hover:text-sky-300 font-semibold cursor-pointer">
+                                I don't have a product key (ຂ້ອຍບໍ່ມີຄີຢືນຢັນ) ➔
+                            </button>
+                            <div class="flex gap-2">
+                                <button onclick="nextSetupStep('scr-setup-key', 'scr-setup-lang')" class="px-4 py-1.5 bg-[#443366] hover:bg-[#553f7c] text-white rounded text-xs cursor-pointer">Back</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 6] WINDOWS SETUP: SELECT OS VERSION -->
+                <div id="scr-setup-version" class="hidden absolute inset-0 bg-gradient-to-tr from-[#1f1635] to-[#3a205a] flex items-center justify-center p-6">
+                    <div class="bg-[#2d2146] border border-[#443366] w-full max-w-xl rounded-lg shadow-2xl p-6 flex flex-col justify-between min-h-[380px] text-left">
+                        <div>
+                            <div class="flex items-center gap-2 mb-3 border-b border-[#443366] pb-3">
+                                <span class="text-sm font-semibold text-slate-300">Windows Setup</span>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-3">ເລືອກລະບົບປະຕິບັດການທີ່ຕ້ອງການຕິດຕັ້ງ</h3>
+                            
+                            <div class="border border-[#443366] rounded overflow-hidden text-xs text-slate-300 bg-[#1c142e]">
+                                <div class="grid grid-cols-3 bg-[#2d2146] p-2 border-b border-[#443366] font-bold text-slate-400">
+                                    <span>Operating System</span>
+                                    <span>Architecture</span>
+                                    <span>Date Modified</span>
+                                </div>
+                                <div class="max-h-36 overflow-y-auto divide-y divide-[#32264e]">
+                                    <div class="grid grid-cols-3 p-2 hover:bg-sky-500 hover:text-slate-950 cursor-pointer" onclick="selectOS('Home')">
+                                        <span>Windows 11 Home</span><span>x64</span><span>6/24/2026</span>
+                                    </div>
+                                    <div class="grid grid-cols-3 p-2 hover:bg-sky-500 hover:text-slate-950 cursor-pointer" onclick="selectOS('Education')">
+                                        <span>Windows 11 Education</span><span>x64</span><span>6/24/2026</span>
+                                    </div>
+                                    <!-- ເວີຊັນແນະນຳໃນການສອນ -->
+                                    <div id="os-pro-row" class="grid grid-cols-3 p-2 bg-sky-900/40 border-l-4 border-sky-400 text-sky-300 font-semibold hover:bg-sky-500 hover:text-slate-950 cursor-pointer" onclick="selectOS('Pro')">
+                                        <span>Windows 11 Pro ⭐</span><span>x64</span><span>6/24/2026</span>
+                                    </div>
+                                    <div class="grid grid-cols-3 p-2 hover:bg-sky-500 hover:text-slate-950 cursor-pointer" onclick="selectOS('ProWork')">
+                                        <span>Windows 11 Pro for Workstations</span><span>x64</span><span>6/24/2026</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-4 border-t border-[#443366] pt-4">
+                            <button onclick="nextSetupStep('scr-setup-version', 'scr-setup-key')" class="px-4 py-1.5 bg-[#443366] hover:bg-[#553f7c] text-white rounded text-xs cursor-pointer">Back</button>
+                            <button onclick="nextSetupStep('scr-setup-version', 'scr-setup-license')" class="px-5 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded text-xs shadow cursor-pointer">Next</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 7] WINDOWS SETUP: LICENSE TERMS -->
+                <div id="scr-setup-license" class="hidden absolute inset-0 bg-gradient-to-tr from-[#1f1635] to-[#3a205a] flex items-center justify-center p-6">
+                    <div class="bg-[#2d2146] border border-[#443366] w-full max-w-xl rounded-lg shadow-2xl p-6 flex flex-col justify-between min-h-[380px] text-left">
+                        <div>
+                            <div class="flex items-center gap-2 mb-3 border-b border-[#443366] pb-3">
+                                <span class="text-sm font-semibold text-slate-300">Windows Setup</span>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-2">ຂໍ້ຕົກລົງ ແລະ ເງື່ອນໄຂການໃຊ້ງານ (License Terms)</h3>
+                            
+                            <div class="bg-[#1c142e] border border-[#553f7c] p-3 rounded h-40 overflow-y-auto text-[10px] text-slate-400 leading-relaxed mb-4">
+                                <p class="font-bold text-slate-200 mb-2">MICROSOFT SOFTWARE LICENSE TERMS</p>
+                                <p class="mb-2">WINDOWS OPERATING SYSTEM</p>
+                                <p>ໂດຍການຍອມຮັບຂໍ້ຕົກລົງນີ້, ທ່ານຍິນຍອມທີ່ຈະປະຕິບັດຕາມເງື່ອນໄຂທັງໝົດຂອງບໍລິສັດ Microsoft. ລະບົບປະຕິບັດການ Windows 11 Pro ນີ້ໄດ້ຮັບການຄຸ້ມຄອງພາຍໃຕ້ກົດໝາຍສາກົນ...</p>
+                                <p class="mt-2">ທ່ານບໍ່ສາມາດນຳໃຊ້ຊອບແວນີ້ໃນທາງທີ່ຜິດກົດໝາຍ ຫຼື ແຈກຢາຍໂດຍບໍ່ໄດ້ຮັບອະນຸຍາດ.</p>
+                            </div>
+                            
+                            <label class="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                                <input type="checkbox" id="license-check" class="rounded border-[#553f7c] bg-[#1c142e] text-sky-500 focus:ring-0">
+                                <span>I accept the Microsoft Software License Terms. (ຂ້ອຍຍອມຮັບຂໍ້ຕົກລົງ)</span>
+                            </label>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-4 border-t border-[#443366] pt-4">
+                            <button onclick="nextSetupStep('scr-setup-license', 'scr-setup-version')" class="px-4 py-1.5 bg-[#443366] hover:bg-[#553f7c] text-white rounded text-xs cursor-pointer">Back</button>
+                            <button onclick="checkLicense()" class="px-5 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded text-xs shadow cursor-pointer">Next</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 8] WINDOWS SETUP: TYPE OF INSTALLATION (UPGRADE VS CUSTOM) -->
+                <div id="scr-setup-type" class="hidden absolute inset-0 bg-gradient-to-tr from-[#1f1635] to-[#3a205a] flex items-center justify-center p-6">
+                    <div class="bg-[#2d2146] border border-[#443366] w-full max-w-xl rounded-lg shadow-2xl p-6 flex flex-col justify-between min-h-[380px] text-left">
+                        <div>
+                            <div class="flex items-center gap-2 mb-3 border-b border-[#443366] pb-3">
+                                <span class="text-sm font-semibold text-slate-300">Windows Setup</span>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-4">ເລືອກຮູບແບບການຕິດຕັ້ງທີ່ຕ້ອງການ</h3>
+                            
+                            <div class="space-y-3">
+                                <!-- Option 1 (Upgrade) - ບໍ່ນິຍົມສຳລັບລົງເຄື່ອງໃໝ່ -->
+                                <button class="w-full text-left p-3.5 bg-[#251b3a] border border-[#443366] rounded-lg hover:bg-[#342652] transition-all flex flex-col gap-1 opacity-70">
+                                    <span class="text-xs font-bold text-slate-300">Upgrade: Install Windows and keep files, settings, and applications</span>
+                                    <span class="text-[10px] text-slate-500">ອັບເກຣດທັບ Windows ເກົ່າ ໂດຍຮັກສາໄຟລ໌ ແລະ ໂປຣແກຣມເດີມໄວ້ (ບໍ່ເໝາະສຳລັບການລ້າງເຄື່ອງ).</span>
+                                </button>
+                                
+                                <!-- Option 2 (Custom) - ປຸ່ມທີ່ຖືກຕ້ອງສຳລັບການລ້າງເຄື່ອງ -->
+                                <button onclick="nextSetupStep('scr-setup-type', 'scr-setup-partition')" class="w-full text-left p-3.5 bg-sky-950/40 border border-sky-500/50 rounded-lg hover:bg-sky-900/30 transition-all flex flex-col gap-1 shadow-lg shadow-sky-500/5 border-l-4 border-l-sky-400 cursor-pointer">
+                                    <span class="text-xs font-bold text-sky-400">Custom: Install Windows only (advanced) ⭐</span>
+                                    <span class="text-[10px] text-slate-300">ຕິດຕັ້ງ Windows ໃໝ່ທັງໝົດ (ຂັ້ນສູງ): ທ່ານສາມາດແບ່ງ, ລຶບ ຫຼື ຟໍແມັດຮາດດິດໄດ້ຢ່າງອິດສະຫຼະ.</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-2 mt-4 border-t border-[#443366] pt-4">
+                            <button onclick="nextSetupStep('scr-setup-type', 'scr-setup-license')" class="px-4 py-1.5 bg-[#443366] hover:bg-[#553f7c] text-white rounded text-xs cursor-pointer">Back</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 9] WINDOWS SETUP: PARTITION MANAGER (CRITICAL STEP!) -->
+                <div id="scr-setup-partition" class="hidden absolute inset-0 bg-gradient-to-tr from-[#1f1635] to-[#3a205a] flex items-center justify-center p-6">
+                    <div class="bg-[#2d2146] border border-[#443366] w-full max-w-2xl rounded-lg shadow-2xl p-5 flex flex-col justify-between min-h-[400px] text-left">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2 border-b border-[#443366] pb-2">
+                                <span class="text-xs font-semibold text-slate-300">Windows Setup</span>
+                            </div>
+                            <h3 class="text-sm font-bold text-white mb-2">Where do you want to install Windows? (ຈັດການພາດທິຊັນ)</h3>
+                            
+                            <!-- ຕາຕະລາງ Partition ປ່ຽນແປງສະຖານະຕາມການກົດ -->
+                            <div class="border border-[#443366] rounded overflow-hidden text-[11px] text-slate-300 bg-[#1c142e]">
+                                <div class="grid grid-cols-12 bg-[#2d2146] p-2 border-b border-[#443366] font-bold text-slate-400 text-center">
+                                    <span class="col-span-6 text-left">Name</span>
+                                    <span class="col-span-2">Total Size</span>
+                                    <span class="col-span-2">Free Space</span>
+                                    <span class="col-span-2">Type</span>
+                                </div>
+                                <div id="partition-list" class="divide-y divide-[#32264e] max-h-32 overflow-y-auto">
+                                    <!-- ພາດທິຊັນຈະຖືກປ່ຽນແປງຜ່ານ JS -->
+                                </div>
+                            </div>
+
+                            <!-- ແຖບປຸ່ມຈັດການ Partition (Interactive) -->
+                            <div class="flex gap-4 mt-3 text-xs text-sky-400 justify-start">
+                                <button onclick="deletePartition()" class="hover:underline flex items-center gap-1 cursor-pointer"><span class="text-sm">❌</span> Delete</button>
+                                <button onclick="formatPartition()" class="hover:underline flex items-center gap-1 cursor-pointer"><span class="text-sm">🧹</span> Format</button>
+                                <button onclick="newPartition()" class="hover:underline flex items-center gap-1 cursor-pointer"><span class="text-sm">➕</span> New</button>
+                            </div>
+                        </div>
+                        
+                        <!-- ຂໍ້ຄວາມແນະນຳໃນໜ້າຈໍ -->
+                        <p id="partition-warning-msg" class="text-[10px] text-yellow-400/80 mb-2 leading-relaxed bg-[#3d2c5e]/40 p-2 rounded border border-[#5a428c]">
+                            💡 ແນະນຳ: ໃຫ້ເລືອກ Drive 0 ທີ່ເປັນ Unallocated Space ແລ້ວກົດ <b>New</b> ເພື່ອແບ່ງພື້ນທີ່ ຫຼື ກົດ <b>Format</b> ພາດທິຊັນເກົ່າກ່ອນຕິດຕັ້ງ!
+                        </p>
+
+                        <div class="flex justify-end gap-2 border-t border-[#443366] pt-3">
+                            <button onclick="nextSetupStep('scr-setup-partition', 'scr-setup-type')" class="px-4 py-1.5 bg-[#443366] hover:bg-[#553f7c] text-white rounded text-xs cursor-pointer">Back</button>
+                            <button onclick="checkPartitionSelection()" class="px-5 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded text-xs shadow cursor-pointer">Next ➔</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 10] WINDOWS SETUP: INSTALLING PROGRESS SCREEN -->
+                <div id="scr-setup-progress" class="hidden absolute inset-0 bg-gradient-to-tr from-[#1f1635] to-[#3a205a] flex items-center justify-center p-6">
+                    <div class="bg-[#2d2146] border border-[#443366] w-full max-w-lg rounded-lg shadow-2xl p-6 flex flex-col justify-between min-h-[360px] text-left">
+                        <div>
+                            <div class="flex items-center gap-2 mb-4 border-b border-[#443366] pb-3">
+                                <span class="text-sm font-semibold text-slate-300">Installing Windows</span>
+                            </div>
+                            <h3 class="text-base font-bold text-white mb-2">ກຳລັງຕິດຕັ້ງ Windows 11...</h3>
+                            <p class="text-slate-400 text-xs mb-6">ຄອມພິວເຕີຂອງທ່ານອາດຈະມີການຣີສະຕາດ (Restart) ຫຼາຍຄັ້ງໃນຂັ້ນຕອນນີ້.</p>
+                            
+                            <!-- ບົດຮຽນສະຖານະການຕິດຕັ້ງ -->
+                            <div class="space-y-3 text-xs" id="install-tasks">
+                                <div class="flex items-center gap-2" id="task-1">
+                                    <span class="text-emerald-400" id="task-1-icon">⏳</span>
+                                    <span class="text-slate-300">Copying Windows files</span>
+                                </div>
+                                <div class="flex items-center gap-2" id="task-2">
+                                    <span class="text-slate-500" id="task-2-icon">⚪</span>
+                                    <span class="text-slate-300">Getting files ready for installation (<span id="install-percent">0</span>%)</span>
+                                </div>
+                                <div class="flex items-center gap-2" id="task-3">
+                                    <span class="text-slate-500" id="task-3-icon">⚪</span>
+                                    <span class="text-slate-300">Installing features</span>
+                                </div>
+                                <div class="flex items-center gap-2" id="task-4">
+                                    <span class="text-slate-500" id="task-4-icon">⚪</span>
+                                    <span class="text-slate-300">Installing updates</span>
+                                </div>
+                                <div class="flex items-center gap-2" id="task-5">
+                                    <span class="text-slate-500" id="task-5-icon">⚪</span>
+                                    <span class="text-slate-300">Finishing up</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress Bar ຕິດຕັ້ງ -->
+                        <div class="w-full bg-[#1c142e] h-2 rounded-full overflow-hidden mt-6">
+                            <div id="install-progress-bar" class="bg-sky-500 h-full w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 11] OOBE Setup: CHOOSE REGION/COUNTRY -->
+                <div id="scr-oobe-region" class="hidden absolute inset-0 bg-sky-900/40 backdrop-blur-xl flex items-center justify-center p-6" style="background: radial-gradient(circle, rgba(26,62,104,1) 0%, rgba(13,27,51,1) 100%);">
+                    <div class="w-full max-w-3xl bg-[#1e2a3b]/90 border border-slate-700/60 rounded-2xl shadow-2xl p-8 flex flex-col md:flex-row justify-between min-h-[420px] text-left gap-8">
+                        <div class="md:w-1/2 flex flex-col justify-between">
+                            <div>
+                                <span class="text-3xl">🌎</span>
+                                <h2 class="text-2xl font-bold text-white mt-4">Is this the right country or region?</h2>
+                                <p class="text-slate-400 text-xs mt-2 leading-relaxed">ເລືອກປະເທດ ຫຼື ພາກພື້ນທີ່ທ່ານອາໄສຢູ່ ເພື່ອໃຫ້ Windows ຕັ້ງຄ່າເຂດເວລາ ແລະ ທ້ອງຖິ່ນໃຫ້ຖືກຕ້ອງ.</p>
+                            </div>
+                            <span class="text-[10px] text-slate-500">Windows 11 Out-of-Box Experience</span>
+                        </div>
+                        <div class="md:w-1/2 flex flex-col justify-between">
+                            <div class="border border-slate-700 bg-[#111a2e] rounded-lg max-h-56 overflow-y-auto divide-y divide-slate-800 text-xs text-slate-300">
+                                <div class="p-3 hover:bg-sky-500 hover:text-slate-950 cursor-pointer">Cambodia</div>
+                                <!-- ຕົວເລືອກທີ່ແນະນຳສຳລັບນັກຮຽນລາວ -->
+                                <div id="region-lao-row" class="p-3 bg-sky-500/10 text-sky-400 font-bold hover:bg-sky-500 hover:text-slate-950 cursor-pointer flex justify-between items-center" onclick="selectRegion('Laos')">
+                                    <span>Laos (ປະເທດລາວ) 🇱🇦</span>
+                                    <span class="text-[10px] bg-sky-500/20 text-sky-400 px-1.5 py-0.5 rounded">ແນະນຳ</span>
+                                </div>
+                                <div class="p-3 hover:bg-sky-500 hover:text-slate-950 cursor-pointer">Thailand</div>
+                                <div class="p-3 hover:bg-sky-500 hover:text-slate-950 cursor-pointer">United States</div>
+                                <div class="p-3 hover:bg-sky-500 hover:text-slate-950 cursor-pointer">Vietnam</div>
+                            </div>
+                            <div class="flex justify-end gap-3 mt-4">
+                                <button onclick="nextOOBEStep('scr-oobe-region', 'scr-oobe-kb')" class="px-6 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg text-xs shadow-lg transition-all cursor-pointer">Yes (ແມ່ນແລ້ວ)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 12] OOBE Setup: KEYBOARD LAYOUT -->
+                <div id="scr-oobe-kb" class="hidden absolute inset-0 bg-sky-900/40 backdrop-blur-xl flex items-center justify-center p-6" style="background: radial-gradient(circle, rgba(26,62,104,1) 0%, rgba(13,27,51,1) 100%);">
+                    <div class="w-full max-w-3xl bg-[#1e2a3b]/90 border border-slate-700/60 rounded-2xl shadow-2xl p-8 flex flex-col md:flex-row justify-between min-h-[420px] text-left gap-8">
+                        <div class="md:w-1/2 flex flex-col justify-between">
+                            <div>
+                                <span class="text-3xl">⌨️</span>
+                                <h2 class="text-2xl font-bold text-white mt-4">Is this the right keyboard layout?</h2>
+                                <p class="text-slate-400 text-xs mt-2 leading-relaxed">ເລືອກແປ້ນພິມຫຼັກຂອງທ່ານ. ທ່ານສາມາດເພີ່ມແປ້ນພິມພາສາອື່ນ (ເຊັ່ນ ພາສາລາວ) ໄດ້ໃນພາຍຫຼັງ.</p>
+                            </div>
+                            <span class="text-[10px] text-slate-500">Windows 11 Out-of-Box Experience</span>
+                        </div>
+                        <div class="md:w-1/2 flex flex-col justify-between">
+                            <div class="border border-slate-700 bg-[#111a2e] rounded-lg divide-y divide-slate-800 text-xs text-slate-300">
+                                <div class="p-3 bg-sky-500/10 text-sky-400 font-bold hover:bg-sky-500 hover:text-slate-950 cursor-pointer">US (English Keyboard) ⭐</div>
+                                <div class="p-3 hover:bg-sky-500 hover:text-slate-950 cursor-pointer">Lao (ແປ້ນພິມລາວ)</div>
+                                <div class="p-3 hover:bg-sky-500 hover:text-slate-950 cursor-pointer">United Kingdom</div>
+                            </div>
+                            <div class="flex justify-end gap-3 mt-4">
+                                <button onclick="nextOOBEStep('scr-oobe-kb', 'scr-oobe-name')" class="px-6 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg text-xs shadow-lg transition-all cursor-pointer">Yes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 13] OOBE Setup: NAME YOUR PC -->
+                <div id="scr-oobe-name" class="hidden absolute inset-0 bg-sky-900/40 backdrop-blur-xl flex items-center justify-center p-6" style="background: radial-gradient(circle, rgba(26,62,104,1) 0%, rgba(13,27,51,1) 100%);">
+                    <div class="w-full max-w-3xl bg-[#1e2a3b]/90 border border-slate-700/60 rounded-2xl shadow-2xl p-8 flex flex-col md:flex-row justify-between min-h-[420px] text-left gap-8">
+                        <div class="md:w-1/2 flex flex-col justify-between">
+                            <div>
+                                <span class="text-3xl">💻</span>
+                                <h2 class="text-2xl font-bold text-white mt-4">Let's name your device</h2>
+                                <p class="text-slate-400 text-xs mt-2 leading-relaxed">ຕັ້ງຊື່ໃຫ້ກັບຄອມພິວເຕີເຄື່ອງນີ້ (ຫ້າມຍະຫວ່າງ ແລະ ຫ້າມໃຊ້ຕົວອັກສອນພިເສດ).</p>
+                            </div>
+                            <span class="text-[10px] text-slate-500">Windows 11 Out-of-Box Experience</span>
+                        </div>
+                        <div class="md:w-1/2 flex flex-col justify-between gap-4">
+                            <div class="flex-grow flex flex-col justify-center">
+                                <label class="block text-slate-400 text-xs mb-2">PC Name / ຊື່ຄອມພິວເຕີ:</label>
+                                <input type="text" id="pc-name-input" value="LaoTech-Student-PC" class="w-full bg-[#111a2e] border border-slate-700 rounded-lg p-3 text-white text-sm focus:border-sky-500 focus:ring-0">
+                                <p class="text-[10px] text-slate-500 mt-2">Example: HP-Spectre, Classroom-01</p>
+                            </div>
+                            <div class="flex justify-end gap-3">
+                                <button onclick="nextOOBEStep('scr-oobe-name', 'scr-oobe-creds')" class="px-6 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg text-xs shadow-lg transition-all cursor-pointer">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 14] OOBE Setup: CREATE USER ACCOUNT & PASSWORD -->
+                <div id="scr-oobe-creds" class="hidden absolute inset-0 bg-sky-900/40 backdrop-blur-xl flex items-center justify-center p-6" style="background: radial-gradient(circle, rgba(26,62,104,1) 0%, rgba(13,27,51,1) 100%);">
+                    <div class="w-full max-w-3xl bg-[#1e2a3b]/90 border border-slate-700/60 rounded-2xl shadow-2xl p-8 flex flex-col md:flex-row justify-between min-h-[420px] text-left gap-8">
+                        <div class="md:w-1/2 flex flex-col justify-between">
+                            <div>
+                                <span class="text-3xl">👤</span>
+                                <h2 class="text-2xl font-bold text-white mt-4">Who's going to use this device?</h2>
+                                <p class="text-slate-400 text-xs mt-2 leading-relaxed">ສ້າງບັນຊີຜູ້ໃຊ້ທ້ອງຖິ່ນ (Local Account) ແລະ ຕັ້ງລະຫັດຜ່ານ PIN ຄວາມປອດໄພເພື່ອເຂົ້າໃຊ້ງານເຄື່ອງຄອມ.</p>
+                            </div>
+                            <span class="text-[10px] text-slate-500">Windows 11 Out-of-Box Experience</span>
+                        </div>
+                        <div class="md:w-1/2 flex flex-col justify-between gap-4">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-slate-400 text-xs mb-1.5">User name / ຊື່ຜູ້ໃຊ້:</label>
+                                    <input type="text" id="username-input" value="Student" class="w-full bg-[#111a2e] border border-slate-700 rounded-lg p-2.5 text-white text-xs focus:border-sky-500 focus:ring-0">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-400 text-xs mb-1.5">Create a PIN / ລະຫັດຜ່ານ PIN (4 ຕົວເລກ):</label>
+                                    <input type="password" id="pin-input" value="1234" maxlength="4" class="w-full bg-[#111a2e] border border-slate-700 rounded-lg p-2.5 text-white text-xs tracking-widest focus:border-sky-500 focus:ring-0">
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-3">
+                                <button onclick="nextOOBEStep('scr-oobe-creds', 'scr-oobe-final-load')" class="px-6 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg text-xs shadow-lg transition-all cursor-pointer">Next</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- [SCREEN 15] OOBE Setup: FINALIZING SCREEN -->
+                <div id="scr-oobe-final-load" class="hidden absolute inset-0 bg-gradient-to-tr from-[#02132b] to-[#0d2a4e] flex flex-col items-center justify-center p-6 text-center">
+                    <div class="win-spinner flex justify-center items-center mb-10">
+                        <div class="win-spinner-dot"></div>
+                        <div class="win-spinner-dot"></div>
+                        <div class="win-spinner-dot"></div>
+                        <div class="win-spinner-dot"></div>
+                        <div class="win-spinner-dot"></div>
+                    </div>
+                    <h2 class="text-3xl font-light text-white animate-pulse" id="oobe-welcome-msg">Hi</h2>
+                    <p class="text-slate-400 text-xs mt-3 max-w-sm leading-relaxed" id="oobe-welcome-sub">Getting things ready for you. This might take a few minutes. Don't turn off your PC.</p>
+                </div>
+
+                <!-- [SCREEN 16] WINDOWS 11 DESKTOP (VICTORY!) -->
+                <div id="scr-desktop" class="hidden absolute inset-0 flex flex-col justify-between" style="background-image: url('https://images.unsplash.com/photo-1620121692029-d088224ddc74?q=80&w=1200&auto=format&fit=crop'); background-size: cover; background-position: center;">
+                    
+                    <!-- Desktop Icons -->
+                    <div class="p-4 flex flex-col items-start gap-4 text-xs">
+                        <div class="flex flex-col items-center gap-1 w-14 text-center cursor-pointer p-1 rounded hover:bg-white/10">
+                            <span class="text-2xl">🖥️</span>
+                            <span class="text-[10px] text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">This PC</span>
+                        </div>
+                        <div class="flex flex-col items-center gap-1 w-14 text-center cursor-pointer p-1 rounded hover:bg-white/10">
+                            <span class="text-2xl">🗑️</span>
+                            <span class="text-[10px] text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">Recycle Bin</span>
+                        </div>
+                    </div>
+
+                    <!-- Congratulatory Modal -->
+                    <div class="absolute inset-0 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-sm">
+                        <div class="bg-[#1e2a3b]/95 border-2 border-emerald-500 rounded-2xl p-6 shadow-2xl max-w-md w-full text-center flex flex-col items-center gap-4 animate-bounce">
+                            <div class="bg-emerald-500/10 p-4 rounded-full border border-emerald-500/20 text-emerald-400">
+                                <span class="text-5xl">🏆</span>
+                            </div>
+                            <h3 class="text-xl font-bold text-emerald-400">ການຕິດຕັ້ງ Windows 11 ສຳເລັດແລ້ວ!</h3>
+                            <p class="text-slate-300 text-xs leading-relaxed">
+                                ຍິນດີດ້ວຍນັກສຶກສາ! ທ່ານໄດ້ຜ່ານການທົດສອບ ແລະ ຮຽນຮູ້ທັກສະການຕິດຕັ້ງລະບົບປະຕິບັດການ Windows 11 ຕັ້ງແຕ່ໜ້າ BIOS ຈົນຮອດໜ້າຈໍ Desktop ດ້ວຍຕົນເອງຢ່າງສົມບູນ.
+                            </p>
+                            <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800 w-full text-[11px] text-left space-y-1.5 text-slate-400">
+                                <p>💻 <b>ຊື່ PC:</b> <span id="res-pcname" class="text-sky-400 font-bold"></span></p>
+                                <p>👤 <b>ບັນຊີຜູ້ໃຊ້:</b> <span id="res-user" class="text-sky-400 font-bold"></span></p>
+                                <p>🔑 <b>ລະຫັດຜ່ານ PIN:</b> <span id="res-pin" class="text-sky-400 font-bold">****</span></p>
+                            </div>
+                            <button onclick="resetGame()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-all shadow-lg cursor-pointer">
+                                ກັບໄປເລີ່ມໃໝ່ / ໃຫ້ນັກຮຽນຄົນອື່ນຫຼິ້ນຕໍ່ 🔄
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Centered Taskbar Windows 11 Style -->
+                    <div class="bg-[#202530]/80 border-t border-slate-700/40 h-12 w-full flex justify-center items-center backdrop-blur-md px-4 shadow-2xl">
+                        <div class="flex items-center gap-3">
+                            <!-- Windows Menu -->
+                            <div class="w-8 h-8 rounded hover:bg-white/10 flex items-center justify-center cursor-pointer transition-all">
+                                <div class="grid grid-cols-2 gap-0.5 w-4 h-4 transform rotate-5 text-sky-400">
+                                    <div class="bg-sky-400 w-1.5 h-1.5"></div><div class="bg-sky-400 w-1.5 h-1.5"></div>
+                                    <div class="bg-sky-400 w-1.5 h-1.5"></div><div class="bg-sky-400 w-1.5 h-1.5"></div>
+                                </div>
+                            </div>
+                            <!-- Search -->
+                            <div class="w-8 h-8 rounded hover:bg-white/10 flex items-center justify-center cursor-pointer text-lg">🔍</div>
+                            <!-- Task View -->
+                            <div class="w-8 h-8 rounded hover:bg-white/10 flex items-center justify-center cursor-pointer text-lg">📁</div>
+                            <!-- Edge -->
+                            <div class="w-8 h-8 rounded hover:bg-white/10 flex items-center justify-center cursor-pointer text-lg">🌐</div>
+                            <!-- Store -->
+                            <div class="w-8 h-8 rounded hover:bg-white/10 flex items-center justify-center cursor-pointer text-lg">🛍️</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <p class="text-xs text-slate-500 mt-2 text-center">💻 ຈຳລອງລະບົບຄອມພິວເຕີ UEFI / GPT Mode. ຫາກພົບບັນຫາໃຫ້ຕິດຕໍ່ຄູສອນປະຈຳຫ້ອງ.</p>
+        </section>
+
+        <!-- ຝັ່ງຂວາ: Teacher's Instruction Panel - 5 ຄໍລຳ (ລະອຽດຫຼາຍ) -->
+        <section class="lg:col-span-4 flex flex-col justify-between bg-slate-800 border border-slate-700 rounded-3xl p-6 shadow-xl min-h-[500px]">
+            <div class="flex flex-col gap-4">
+                <div class="flex items-center gap-2 border-b border-slate-700 pb-3">
+                    <span class="text-xl">👩‍🏫</span>
+                    <div>
+                        <h2 class="text-sm font-bold text-sky-400">ແຜງຄຳແນະນຳຂອງຄູສອນ</h2>
+                        <p class="text-[10px] text-slate-400">ທິດສະດີ ແລະ ເຫດຜົນໃນການຕັ້ງຄ່າ</p>
+                    </div>
+                </div>
+
+                <!-- ກ່ອງສະແດງເນື້ອຫາຄຳສອນປ່ຽນແປງຕາມ Step ປັດຈຸບັນ -->
+                <div id="instruction-box" class="bg-slate-950/50 border border-slate-700/50 p-4 rounded-2xl min-h-[280px] text-xs leading-relaxed text-slate-300">
+                    <!-- ເນື້ອຫາຄຳສອນຈະຖືກປ່ຽນແປງຜ່ານ JS ຕາມ id ຂອງ screen -->
+                </div>
+            </div>
+
+            <!-- ຂໍ້ມູນຄວາມຮູ້ນ້ອຍໆ (Did you know?) -->
+            <div class="mt-4 bg-sky-950/20 border border-sky-500/20 p-3 rounded-xl">
+                <p class="text-[10px] text-sky-400 font-bold mb-1">💡 ຄວາມຮູ້ເພີ່ມເຕີມສຳລັບນັກຮຽນ:</p>
+                <p class="text-[10px] text-slate-400 leading-normal" id="dyk-content">
+                    Windows 11 ບັງຄັບໃຫ້ເຄື່ອງຄອມພິວເຕີຕ້ອງມີລະບົບຄວາມປອດໄພ TPM 2.0 ແລະ Secure Boot ໃນເມນູ BIOS ກ່ອນຈຶ່ງຈະສາມາດຕິດຕັ້ງໄດ້.
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ສ່ວນທ້າຍ (Footer) -->
+    <footer class="bg-slate-950 py-3 text-center text-[10px] text-slate-500 border-t border-slate-900/60">
+        <p>© 2026 ລະບົບຝຶກທັກສະໄອທີ - ສ້າງຂຶ້ນເພື່ອເປັນສື່ການຮຽນການສອນໃນປະເທດລາວ 🇱🇦</p>
+    </footer>
+
+    <!-- ລະບົບສຽງ ແລະ Logic ທັງໝົດ -->
+    <script>
+        // ----------------------------------------------------
+        // ລະບົບສຽງເອັບເຟັກ (Web Audio API Synthesizer)
+        // ----------------------------------------------------
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'beep') {
+                // ສຽງ BIOS Beep
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'click') {
+                // ສຽງຄລິກປຸ່ມ
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(450, now);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'success') {
+                // ສຽງສຳເລັດ (Victory Chime)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                osc.start(now);
+                osc.stop(now + 0.6);
+            } else if (type === 'error') {
+                // ສຽງຜິດພາດ (Buzz)
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(140, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+        }
+
+        // ----------------------------------------------------
+        // ຂໍ້ມູນບົດຮຽນ / ຄຳອະທິບາຍຂອງຄູສອນແຕ່ລະຂັ້ນຕອນ
+        // ----------------------------------------------------
+        const guides = {
+            'scr-boot': {
+                title: 'ເລີ່ມຕົ້ນ: ການເຂົ້າເມນູ BIOS / Boot Menu 🔌',
+                desc: 'ກ່ອນຈະຕິດຕັ້ງ Windows ໃໝ່, ເຮົາຕ້ອງບອກໃຫ້ເຄື່ອງຄອມພິວເຕີບູດລະບົບຈາກ <b>USB Flash Drive</b> ແທນທີ່ຈະບູດຈາກຮາດດິດເກົ່າ.<br><br><b>ວິທີເຮັດ:</b> ເມື່ອເປີດເຄື່ອງຄອມຂຶ້ນມາ ໃຫ້ກົດປຸ່ມຮ້ອນຊ້ຳໆທັນທີ ເຊັ່ນ: [F12], [F2] ຫຼື [Delete] (ຂຶ້ນກັບຍີ່ຫໍ້ເມນບອດ) ເພື່ອເປີດເມນູເລືອກບູດ.'
+            },
+            'scr-bios': {
+                title: 'ຂັ້ນຕອນທີ 1: ການເລືອກອຸປະກອນບູດ 💾',
+                desc: 'ຕອນນີ້ເຮົາເຂົ້າມາຢູ່ໃນໜ້າ <b>Boot Menu (BIOS)</b> ແລ້ວ. ໃຫ້ສັງເກດລາຍການອຸປະກອນທີ່ມີຢູ່.<br><br><b>ວິທີເຮັດ:</b> ເພື່ອຕິດຕັ້ງ Windows 11 ຜ່ານ USB, ໃຫ້ນັກຮຽນຊອກຫາ ແລະ ກົດເລືອກ <b>"UEFI: USB Flash Drive"</b> ເພື່ອເລີ່ມລະບົບຕິດຕັ້ງທີ່ຢູ່ໃນ USB.'
+            },
+            'scr-setup-lang': {
+                title: 'ຂັ້ນຕອນທີ 2: ການຕັ້ງຄ່າພາສາ ແລະ ເວລາ 🇺🇸🇱🇦',
+                desc: 'ເມື່ອບູດຈາກ USB ສຳເລັດ ຈະເຂົ້າສູ່ໜ້າຕັ້ງຄ່າທຳອິດຂອງ Windows Setup.<br><br><b>ຄຳແນະນຳ:</b><br>• <b>Language to install:</b> ແນະນຳໃຫ້ເລືອກເປັນ English (US) ເປັນພາສາຫຼັກຂອງລະບົບ.<br>• <b>Time and currency format:</b> ສາມາດປ່ຽນເປັນ Lao ໄດ້ໃນພາຍຫຼັງ ຫຼື ຕອນນີ້ ເພື່ອໃຫ້ເວລາ ແລະ ສະກຸນເງິນເປັນຮູບແບບລາວ.<br>• ກົດ <b>Next</b> ເພື່ອໄປຂັ້ນຕອນຕໍ່ໄປ.'
+            },
+            'scr-setup-now': {
+                title: 'ຂັ້ນຕອນທີ 3: ການເລີ່ມຕົ້ນຕິດຕັ້ງ 🚀',
+                desc: 'ໜ້ານີ້ມີໜ້າທີ່ດຽວຄືການຍືນຍັນຄວາມພ້ອມໃນການຕິດຕັ້ງ.<br><br><b>ວິທີເຮັດ:</b> ໃຫ້ກົດປຸ່ມ <b>Install now</b> ເພື່ອເປີດລະບົບຕິດຕັ້ງ Windows 11 ເຂົ້າສູ່ຂັ້ນຕອນຖັດໄປ.'
+            },
+            'scr-setup-key': {
+                title: 'ຂັ້ນຕອນທີ 4: ການຢືນຢັນ Product Key 🔑',
+                desc: 'Windows ຈະຖາມຫາລະຫັດລິຂະສິດ Product Key ເພື່ອຢືນຢັນຄວາມຖືກຕ້ອງ.<br><br><b>ຄຳແນະນຳໃນການສອນ:</b> ໃນກໍລະນີທີ່ຕິດຕັ້ງເພື່ອຮຽນຮູ້ ຫຼື ຍັງບໍ່ມີຄີຢືນຢັນ, ພວກເຮົານິຍົມກົດປຸ່ມ <b>"I don\'t have a product key"</b> ເພື່ອຂ້າມຂັ້ນຕອນນີ້ໄປກ່ອນ ແລະ ໄປໃສ່ລິຂະສິດພາຍຫຼັງຫຼັງຕິດຕັ້ງສຳເລັດ.'
+            },
+            'scr-setup-version': {
+                title: 'ຂັ້ນຕອນທີ 5: ການເລືອກເວີຊັນ Windows 11 👑',
+                desc: 'Windows 11 ມີຫຼາຍເວີຊັນໃຫ້ເລືອກໃຊ້ຕາມຄວາມເໝາະສົມ ເຊັ່ນ Home (ສຳລັບທົ່ວໄປ) ແລະ Pro (ສຳລັບທຸລະກິດ/ຂັ້ນສູງ).<br><br><b>ຄຳແນະນຳ:</b> ແນະນຳໃຫ້ເລືອກ <b>Windows 11 Pro</b> ເພາະມີຟີເຈີຄົບຖ້ວນທີ່ສຸດ ແລະ ເໝາະສຳລັບການຮຽນຮູ້ລະບົບເຄືອຂ່າຍ (Domain/Active Directory).'
+            },
+            'scr-setup-license': {
+                title: 'ຂັ້ນຕອນທີ 6: ຍອມຮັບຂໍ້ຕົກລົງລິຂະສິດ 📝',
+                desc: 'ກ່ອນຈະໃຊ້ງານຊອບແວໄດ້ ຕ້ອງມີການກວດສອບ ແລະ ຍອມຮັບເງື່ອນໄຂການນຳໃຊ້ຂອງ Microsoft ເສຍກ່ອນ.<br><br><b>ວິທີເຮັດ:</b> ຕິກໃສ່ຊ່ອງ <b>"I accept the Microsoft Software License Terms..."</b> ແລ້ວກົດ Next.'
+            },
+            'scr-setup-type': {
+                title: 'ຂັ້ນຕອນທີ 7: ເລືອກຮູບແບບການຕິດຕັ້ງ 🛠️',
+                desc: 'ມີ 2 ຮູບແບບການຕິດຕັ້ງໃຫ້ເລືອກ:<br>• <b>Upgrade:</b> ໃຊ້ໃນກໍລະນີມີ Windows ເກົ່າ ແລະ ຢາກອັບເກຣດໂດຍບໍ່ໃຫ້ຂໍ້ມູນເສຍຫາຍ.<br>• <b>Custom (Advanced):</b> ໃຊ້ໃນການລ້າງເຄື່ອງໃໝ່ທັງໝົດ, ແບ່ງພາດທິຊັນໃໝ່ ເຊິ່ງເປັນວິທີທີ່ດີທີ່ສຸດເພື່ອໃຫ້ໄດ້ລະບົບທີ່ສະອາດ ແລະ ໄວ.<br><br><b>ວິທີເຮັດ:</b> ໃຫ້ເລືອກ <b>Custom: Install Windows only (advanced)</b>.'
+            },
+            'scr-setup-partition': {
+                title: 'ຂັ້ນຕອນທີ 8: ຈັດການ Partition (ສຳຄັນທີ່ສຸດ!) ⚠️',
+                desc: 'ຂັ້ນຕອນນີ້ຄືຈຸດຕັດສິນຂອງຊ່າງໄອທີ! ມັນຄືການແບ່ງພື້ນທີ່ເກັບຂໍ້ມູນຂອງຮາດດິດ.<br><br><b>ຄຳສັບທີ່ຕ້ອງຮູ້:</b><br>• <b>Unallocated Space:</b> ພື້ນທີ່ຫວ່າງເປົ່າທີ່ຍັງບໍ່ທັນແບ່ງ (ຕ້ອງກົດ <b>New</b> ເພື່ອສ້າງ).<br>• <b>Delete:</b> ລຶບພາດທິຊັນເກົ່າ (ຂໍ້ມູນຈະເສຍຫາຍທັງໝົດ).<br>• <b>Format:</b> ລ້າງຂໍ້ມູນໃນພາດທິຊັນນັ້ນໃຫ້ສະອາດ.<br><br><b>ວິທີເຮັດໃນເກມ:</b> ໃຫ້ກົດເລືອກ Drive 0 ແລ້ວກົດ <b>New</b> ຈາກນັ້ນກົດ Next.'
+            },
+            'scr-setup-progress': {
+                title: 'ຂັ້ນຕອນທີ 9: ຂັ້ນຕອນການຕິດຕັ້ງລະບົບ ⏳',
+                desc: 'ຕອນນີ້ລະບົບກຳລັງກັອບປີ້ ແລະ ຕິດຕັ້ງໄຟລ໌ Windows 11 ລົງໃນຮາດດິດຂອງທ່ານ.<br><br><b>ສິ່ງທີ່ຄວນຮູ້:</b> ຂັ້ນຕອນນີ້ອາດໃຊ້ເວລາ 10-30 ນາທີ ຂຶ້ນກັບຄວາມໄວຂອງ USB ແລະ ຮາດດິດ (ຖ້າໃຊ້ SSD ຈະໄວຫຼາຍ). ເຄື່ອງອາດຈະດັບ ແລະ ເປີດໃໝ່ເອງ ຫ້າມຖອດ USB ຫຼື ປິດເຄື່ອງເດັດຂາດ.'
+            },
+            'scr-oobe-region': {
+                title: 'ຂັ້ນຕອນທີ 10: ຕັ້ງຄ່າ OOBE - ເຂດປະເທດ 🇱🇦',
+                desc: 'ຫຼັງຈາກຣີສະຕາດ, ເຮົາຈະເຂົ້າມາສູ່ໜ້າ <b>OOBE (Out-of-Box Experience)</b> ເຊິ່ງເປັນການຕັ້ງຄ່າເລີ່ມຕົ້ນຂອງຜູ້ໃຊ້.<br><br><b>ວິທີເຮັດ:</b> ເລືອກ <b>Laos (ປະເທດລາວ)</b> ແລ້ວກົດ <b>Yes</b> ເພື່ອໃຫ້ Windows ຕັ້ງຄ່າທ້ອງຖິ່ນໃຫ້ຖືກຕ້ອງ.'
+            },
+            'scr-oobe-kb': {
+                title: 'ຂັ້ນຕອນທີ 11: ຕັ້ງຄ່າ OOBE - ແປ້ນພິມ ⌨️',
+                desc: 'ເລືອກຮູບແບບແປ້ນພິມຫຼັກຂອງທ່ານ.<br><br><b>ວິທີເຮັດ:</b> ໃຫ້ເລືອກ <b>US (English Keyboard)</b> ເປັນຄ່າເລີ່ມຕົ້ນ ເພາະເຮົາຈະໃຊ້ພິມພາສາອັງກິດ ແລະ ຕັ້ງຄ່າຕ່າງໆໄດ້ງ່າຍ, ສ່ວນພາສາລາວແມ່ນສາມາດເພີ່ມເຂົ້າໄດ້ງ່າຍໆຫຼັງຈາກຕິດຕັ້ງສຳເລັດ.'
+            },
+            'scr-oobe-name': {
+                title: 'ຂັ້ນຕອນທີ 12: ຕັ້ງຊື່ຄອມພິວເຕີ 🖥️',
+                desc: 'ການຕັ້ງຊື່ PC ຈະຊ່ວຍໃຫ້ງ່າຍໃນການຄົ້ນຫາໃນລະບົບເຄືອຂ່າຍ (Network).<br><br><b>ຂໍ້ຄວນລະວັງ:</b> ຫ້າມໃສ່ຍະຫວ່າງ (Space) ແລະ ຫ້າມໃຊ້ຕົວອັກສອນພິເສດ ເຊັ່ນ @, #, $.'
+            },
+            'scr-oobe-creds': {
+                title: 'ຂັ້ນຕອນທີ 13: ສ້າງບັນຊີຜູ້ໃຊ້ ແລະ ລະຫັດ PIN 👤',
+                desc: 'ສ້າງບັນຊີຜູ້ໃຊ້ທ້ອງຖິ່ນ (Local Account) ເພື່ອໃຊ້ງານໃນເຄື່ອງຄອມພິວເຕີນີ້.<br><br><b>ຄຳແນະນຳ:</b> ຕັ້ງຊື່ຜູ້ໃຊ້ ແລະ ລະຫັດຜ່ານ PIN (4 ຕົວເລກ) ເພື່ອປົກປ້ອງຂໍ້ມູນສ່ວນຕົວ ແລະ ງ່າຍໃນການປົດລັອກໜ້າຈໍ.'
+            },
+            'scr-oobe-final-load': {
+                title: 'ຂັ້ນຕອນທີ 14: ຂັ້ນຕອນສຸດທ້າຍ 🎉',
+                desc: 'Windows 11 ກຳລັງຈັດລະບຽບ ແລະ ກຽມໜ້າຈໍ Desktop ຄັ້ງທຳອິດໃຫ້ທ່ານ.<br><br><b>ຄຳເຕືອນ:</b> ຫ້າມປິດເຄື່ອງຄອມພິວເຕີເດັດຂາດ ລໍຖ້າປະມານ 1-2 ນາທີ ລະບົບຈະພາເຂົ້າສູ່ໜ້າຈໍ Desktop ຫຼັກ.'
+            }
+        };
+
+        const dykFacts = [
+            "Windows 11 ບັງຄັບໃຫ້ເຄື່ອງຄອມພິວເຕີຕ້ອງມີລະບົບຄວາມປອດໄພ TPM 2.0 ແລະ Secure Boot ໃນເມນູ BIOS ກ່ອນຈຶ່ງຈະສາມາດຕິດຕັ້ງໄດ້.",
+            "ຖ້າຕິດຕັ້ງ Windows 11 ຜ່ານ SSD ແທນຮາດດິດຈານໝູນແບບເກົ່າ (HDD) ຈະຊ່ວຍໃຫ້ການຕິດຕັ້ງໄວຂຶ້ນເຖິງ 5 ເທົ່າ!",
+            "ການແບ່ງ Partition ແນະນຳໃຫ້ແບ່ງ Drive C ຢ່າງໜ້ອຍ 100GB ເພື່ອໃຫ້ພຽງພໍກັບການເກັບໄຟລ໌ລະບົບ ແລະ ໂປຣແກຣມຕ່າງໆ.",
+            "ໃນໜ້າ OOBE ຖ້າເຮົາບໍ່ຕໍ່ອິນເຕີເນັດ, ເຮົາສາມາດໃຊ້ຄຳສັ່ງ bypass oobe ຜ່ານ Command Prompt ເພື່ອຂ້າມການຖາມຫາ Microsoft Account ໄດ້."
+        ];
+
+        // ----------------------------------------------------
+        // ລະບົບຄຸ້ມຄອງການປ່ຽນໜ້າຈໍ (Screen Router)
+        // ----------------------------------------------------
+        let activeScreenId = 'scr-boot';
+        let selectedOS = 'Pro';
+        let isPartitionCreated = false;
+        let isPartitionFormatted = false;
+
+        function updateGuide(screenId) {
+            const insBox = document.getElementById('instruction-box');
+            const dykBox = document.getElementById('dyk-content');
+            
+            if (guides[screenId]) {
+                insBox.innerHTML = `
+                    <h3 class="text-sm font-bold text-sky-400 mb-2">${guides[screenId].title}</h3>
+                    <p class="leading-relaxed">${guides[screenId].desc}</p>
+                `;
+            } else {
+                insBox.innerHTML = `
+                    <h3 class="text-sm font-bold text-emerald-400 mb-2">ສຳເລັດການທົດສອບ! 🏆</h3>
+                    <p class="leading-relaxed">ເກັ່ງຫຼາຍນັກຮຽນ! ທ່ານໄດ້ຜ່ານຂັ້ນຕອນການຕິດຕັ້ງ Windows 11 ຢ່າງສົມບູນແລ້ວ. ຕອນນີ້ທ່ານມີຄວາມຮູ້ພື້ນຖານໃນການເປັນຊ່າງເຕັກນິກລະບົບແລ້ວ.</p>
+                `;
+            }
+
+            // ສຸ່ມ Fact ຄວາມຮູ້ເພີ່ມເຕີມ
+            dykBox.innerText = dykFacts[Math.floor(Math.random() * dykFacts.length)];
+        }
+
+        function showScreen(screenId) {
+            // ເຊື່ອງທຸກໆ Screen
+            const screens = document.querySelectorAll('#virtual-monitor > div');
+            screens.forEach(s => s.classList.add('hidden'));
+
+            // ສະແດງ Screen ທີ່ເລືອກ
+            const activeScreen = document.getElementById(screenId);
+            activeScreen.classList.remove('hidden');
+            activeScreenId = screenId;
+
+            // ອັບເດດ Guide
+            updateGuide(screenId);
+
+            // ອັບເດດ Step Badges ດ້ານເທິງ
+            updateBadges(screenId);
+        }
+
+        function updateBadges(screenId) {
+            const b1 = document.getElementById('step-badge-1');
+            const b2 = document.getElementById('step-badge-2');
+            const b3 = document.getElementById('step-badge-3');
+            const b4 = document.getElementById('step-badge-4');
+
+            // ຣີເຊັດທັງໝົດ
+            [b1, b2, b3, b4].forEach(b => {
+                b.className = "px-2.5 py-1 rounded bg-slate-800 text-slate-400 transition-all";
+            });
+
+            if (screenId === 'scr-boot' || screenId === 'scr-bios') {
+                b1.className = "px-2.5 py-1 rounded bg-sky-500 text-slate-950 font-bold scale-105 transition-all";
+            } else if (screenId.startsWith('scr-setup-') || screenId === 'scr-win-load') {
+                b2.className = "px-2.5 py-1 rounded bg-sky-500 text-slate-950 font-bold scale-105 transition-all";
+            } else if (screenId.startsWith('scr-oobe-')) {
+                b3.className = "px-2.5 py-1 rounded bg-sky-500 text-slate-950 font-bold scale-105 transition-all";
+            } else if (screenId === 'scr-desktop') {
+                b4.className = "px-2.5 py-1 rounded bg-emerald-500 text-slate-950 font-bold scale-105 transition-all";
+            }
+        }
+
+        // ----------------------------------------------------
+        // LOGIC ການຫຼິ້ນແຕ່ລະໜ້າຈໍ
+        // ----------------------------------------------------
+        
+        // 0. ເລີ່ມຕົ້ນກົດປຸ່ມຮ້ອນ
+        function pressBootKey() {
+            playSound('beep');
+            showScreen('scr-bios');
+        }
+
+        // 1. ເລືອກບູດຜ່ານ USB
+        function selectUSBBoot() {
+            playSound('click');
+            showScreen('scr-win-load');
+            setTimeout(() => {
+                showScreen('scr-setup-lang');
+            }, 3000); // ໂຫຼດ 3 ວິນາທີ
+        }
+
+        // 2. ປ່ຽນໜ້າ Setup ທົ່ວໄປ
+        function nextSetupStep(current, next) {
+            playSound('click');
+            showScreen(next);
+        }
+
+        // 3. ເລືອກເວີຊັນ OS
+        function selectOS(version) {
+            playSound('click');
+            selectedOS = version;
+            
+            // ປ່ຽນແປງ UI highlight
+            const rows = document.querySelectorAll('#os-pro-row, .grid-cols-3');
+            rows.forEach(r => r.classList.remove('bg-sky-500', 'text-slate-950'));
+            
+            // ໃນຕົວຈຳລອງຈະລັອກໃຫ້ເປັນ Pro ເພື່ອຄວາມງ່າຍ
+        }
+
+        // 4. ກວດສອບການຍອມຮັບ License ຂໍ້ຕົກລົງ
+        function checkLicense() {
+            const chk = document.getElementById('license-check');
+            if (chk.checked) {
+                playSound('click');
+                showScreen('scr-setup-type');
+            } else {
+                playSound('error');
+                alert("ກະລຸນາກົດຍອມຮັບເງື່ອນໄຂການໃຊ້ງານ (License Terms) ກ່ອນກົດ Next!");
+            }
+        }
+
+        // 5. ລະບົບ Partition Manager (Interactive)
+        let partitionState = 'raw'; // raw, split, formatted
+
+        function renderPartitions() {
+            const list = document.getElementById('partition-list');
+            const warningMsg = document.getElementById('partition-warning-msg');
+            list.innerHTML = '';
+
+            if (partitionState === 'raw') {
+                list.innerHTML = `
+                    <div class="grid grid-cols-12 p-2.5 bg-sky-500/10 border-l-4 border-sky-400 text-sky-300 font-bold">
+                        <span class="col-span-6 flex items-center gap-1">💽 Drive 0 Unallocated Space</span>
+                        <span class="col-span-2 text-center">120.0 GB</span>
+                        <span class="col-span-2 text-center">120.0 GB</span>
+                        <span class="col-span-2 text-center">-</span>
+                    </div>
+                `;
+                warningMsg.innerHTML = "💡 <b>Unallocated Space</b> ຄືຮາດດິດຫວ່າງເປົ່າທີ່ຍັງບໍ່ທັນໄດ້ແບ່ງ. ນັກຮຽນຕ້ອງກົດປຸ່ມ <b>New</b> ດ້ານລຸ່ມເພື່ອແບ່ງພື້ນທີ່ກ່ອນ!";
+            } else if (partitionState === 'split') {
+                list.innerHTML = `
+                    <div class="grid grid-cols-12 p-2 opacity-60">
+                        <span class="col-span-6">Drive 0 Partition 1: System Reserved</span>
+                        <span class="col-span-2 text-center">100.0 MB</span>
+                        <span class="col-span-2 text-center">95.0 MB</span>
+                        <span class="col-span-2 text-center">System</span>
+                    </div>
+                    <div class="grid grid-cols-12 p-2.5 bg-sky-500/10 border-l-4 border-sky-400 text-sky-300 font-bold">
+                        <span class="col-span-6">Drive 0 Partition 2: Primary (Drive C)</span>
+                        <span class="col-span-2 text-center">119.9 GB</span>
+                        <span class="col-span-2 text-center">119.9 GB</span>
+                        <span class="col-span-2 text-center">Primary</span>
+                    </div>
+                `;
+                warningMsg.innerHTML = "💡 ລະບົບໄດ້ແບ່ງ Partition ສໍາເລັດແລ້ວ! ແຕ່ກ່ອນຈະຕິດຕັ້ງ ຄວນກົດປຸ່ມ <b>Format</b> ເພື່ອລ້າງລະບົບໄຟລ໌ໃຫ້ສະອາດກ່ອນ.";
+            } else if (partitionState === 'formatted') {
+                list.innerHTML = `
+                    <div class="grid grid-cols-12 p-2 opacity-60">
+                        <span class="col-span-6">Drive 0 Partition 1: System Reserved</span>
+                        <span class="col-span-2 text-center">100.0 MB</span>
+                        <span class="col-span-2 text-center">95.0 MB</span>
+                        <span class="col-span-2 text-center">System</span>
+                    </div>
+                    <div class="grid grid-cols-12 p-2.5 bg-sky-500/10 border-l-4 border-emerald-400 text-emerald-400 font-bold">
+                        <span class="col-span-6">Drive 0 Partition 2: Primary (Formatted ⭐)</span>
+                        <span class="col-span-2 text-center">119.9 GB</span>
+                        <span class="col-span-2 text-center">119.9 GB</span>
+                        <span class="col-span-2 text-center">Primary</span>
+                    </div>
+                `;
+                warningMsg.innerHTML = "🎉 <b>ຮາດດິດພ້ອມແລ້ວ!</b> ພາດທິຊັນໄດ້ຖືກແບ່ງ ແລະ ຟໍແມັດຮຽບຮ້ອຍແລ້ວ. ໃຫ້ນັກຮຽນກົດປຸ່ມ <b>Next</b> ເພື່ອເລີ່ມຕິດຕັ້ງ Windows 11 ໄດ້ເລີຍ.";
+            }
+        }
+
+        function newPartition() {
+            if (partitionState === 'raw') {
+                playSound('success');
+                partitionState = 'split';
+                isPartitionCreated = true;
+                renderPartitions();
+            } else {
+                playSound('error');
+            }
+        }
+
+        // ຟັງຊັນປ່ຽນໜ້າ OOBE (ຮອງຮັບທຸກຂັ້ນຕອນ ແລະ ກວດສອບເງື່ອນໄຂ)
+        function nextOOBEStep(current, next) {
+            playSound('click');
+            if (current === 'scr-oobe-creds') {
+                pcName = document.getElementById('pc-name-input').value || "LaoTech-PC";
+                userName = document.getElementById('username-input').value || "Student";
+                userPin = document.getElementById('pin-input').value || "1234";
+
+                showScreen('scr-oobe-final-load');
+                startOOBEFinalProgress();
+            } else {
+                showScreen(next);
+            }
+        }
+
+        function formatPartition() {
+            if (partitionState === 'split') {
+                playSound('success');
+                partitionState = 'formatted';
+                isPartitionFormatted = true;
+                renderPartitions();
+            } else {
+                playSound('error');
+            }
+        }
+
+        function deletePartition() {
+            if (partitionState !== 'raw') {
+                playSound('click');
+                partitionState = 'raw';
+                isPartitionCreated = false;
+                isPartitionFormatted = false;
+                renderPartitions();
+            } else {
+                playSound('error');
+            }
+        }
+
+        function checkPartitionSelection() {
+            if (partitionState === 'formatted') {
+                playSound('click');
+                showScreen('scr-setup-progress');
+                startInstallationProgress();
+            } else if (partitionState === 'split') {
+                playSound('error');
+                alert("ແນະນຳ: ນັກຮຽນຄວນກົດປຸ່ມ Format ພາດທິຊັນ Drive C ກ່ອນ ເພື່ອຄວາມສະອາດຂອງລະບົບ!");
+            } else {
+                playSound('error');
+                alert("ຜິດພາດ: ທ່ານຍັງບໍ່ໄດ້ແບ່ງພື້ນທີ່ຮາດດິດ Unallocated Space ເທື່ອ! ກະລຸນາກົດປຸ່ມ New ກ່ອນ.");
+            }
+        }
+
+        // 6. ລະບົບໂຫຼດ progress ການຕິດຕັ້ງ Windows Setup (0% -> 100%)
+        function startInstallationProgress() {
+            let percent = 0;
+            const percentEl = document.getElementById('install-percent');
+            const progressBar = document.getElementById('install-progress-bar');
+            
+            const task1Icon = document.getElementById('task-1-icon');
+            const task2Icon = document.getElementById('task-2-icon');
+            const task3Icon = document.getElementById('task-3-icon');
+            const task4Icon = document.getElementById('task-4-icon');
+            const task5Icon = document.getElementById('task-5-icon');
+
+            // Task 1: Complete
+            setTimeout(() => {
+                task1Icon.innerText = "✅";
+                task2Icon.innerText = "⏳";
+                
+                // Start Task 2 Progress (%)
+                const interval = setInterval(() => {
+                    percent += 10;
+                    percentEl.innerText = percent;
+                    progressBar.style.width = `${percent}%`;
+
+                    if (percent >= 100) {
+                        clearInterval(interval);
+                        task2Icon.innerText = "✅";
+                        
+                        // Run remaining tasks sequentially
+                        setTimeout(() => {
+                            task3Icon.innerText = "⏳";
+                            setTimeout(() => {
+                                task3Icon.innerText = "✅";
+                                task4Icon.innerText = "⏳";
+                                setTimeout(() => {
+                                    task4Icon.innerText = "✅";
+                                    task5Icon.innerText = "⏳";
+                                    setTimeout(() => {
+                                        task5Icon.innerText = "✅";
+                                        playSound('success');
+                                        // ຣີສະຕາດເຄື່ອງ ແລະ ເຂົ້າໜ້າ OOBE Setup
+                                        showScreen('scr-win-load');
+                                        setTimeout(() => {
+                                            showScreen('scr-oobe-region');
+                                        }, 2500);
+                                    }, 1000);
+                                }, 1000);
+                            }, 1000);
+                        }, 1000);
+                    }
+                }, 400); // ຄວາມໄວການໂຫຼດ
+            }, 1000);
+        }
+
+        // 7. ຂັ້ນຕອນ OOBE Setup
+        let userRegion = "";
+        let pcName = "";
+        let userName = "";
+        let userPin = "";
+
+        function selectRegion(region) {
+            playSound('click');
+            userRegion = region;
+        }
+
+        function startOOBEFinalProgress() {
+            const msgEl = document.getElementById('oobe-welcome-msg');
+            const subEl = document.getElementById('oobe-welcome-sub');
+
+            const welcomeMsgs = [
+                { main: "Hi", sub: "Getting things ready for you..." },
+                { main: "This might take a few minutes", sub: "Don't turn off your PC." },
+                { main: "Almost there", sub: "Setting up your personal workspace..." }
+            ];
+
+            let index = 0;
+            const interval = setInterval(() => {
+                index++;
+                if (index < welcomeMsgs.length) {
+                    msgEl.innerText = welcomeMsgs[index].main;
+                    subEl.innerText = welcomeMsgs[index].sub;
+                } else {
+                    clearInterval(interval);
+                    playSound('success');
+                    
+                    // ອັບເດດຂໍ້ມູນໃນ Modal desktop ສຸດທ້າຍ
+                    document.getElementById('res-pcname').innerText = pcName;
+                    document.getElementById('res-user').innerText = userName;
+                    document.getElementById('res-pin').innerText = userPin;
+                    
+                    showScreen('scr-desktop');
+                }
+            }, 3000);
+        }
+
+        // ຣີເຊັດເກມໃໝ່ທັງໝົດ
+        function resetGame() {
+            playSound('beep');
+            isPartitionCreated = false;
+            isPartitionFormatted = false;
+            partitionState = 'raw';
+            
+            // ຣີເຊັດຄ່າ inputs
+            document.getElementById('pc-name-input').value = "LaoTech-Student-PC";
+            document.getElementById('username-input').value = "Student";
+            document.getElementById('pin-input').value = "1234";
+            document.getElementById('license-check').checked = false;
+
+            showScreen('scr-boot');
+            renderPartitions();
+        }
+
+        // ລັນລະບົບທຳອິດ
+        window.addEventListener('DOMContentLoaded', () => {
+            updateGuide('scr-boot');
+            renderPartitions();
+        });
+    </script>
+</body>
+</html>

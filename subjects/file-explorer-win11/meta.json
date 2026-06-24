@@ -1,0 +1,8 @@
+{
+  "title": "File Explorer ໃນ Windows 11",
+  "description": "ຮຽນຮູ້ສ່ວນຕ່າງໆຂອງ File Explorer, ການໃຊ້ງານຕົວຈິງ ແລະ ແບບຝຶກຫັດ",
+  "icon": "📁",
+  "parts": 3,
+  "order": 1,
+  "category": "Windows"
+}

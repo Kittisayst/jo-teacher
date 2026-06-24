@@ -1,0 +1,8 @@
+{
+  "title": "Windows 11 Setup Simulator",
+  "description": "ຝຶກຕິດຕັ້ງ Windows 11 ໃນໂປຣແກຣມເສັ້ນທາງ",
+  "icon": "💻",
+  "parts": 4,
+  "order": 2,
+  "category": "Windows"
+}

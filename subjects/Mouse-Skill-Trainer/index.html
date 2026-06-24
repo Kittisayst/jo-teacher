@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ລະບົບຝຶກທັກສະການໃຊ້ເມາົ້ສ໌ - Mouse Trainer</title>
+    <!-- ໃຊ້ Tailwind CSS ສຳລັບການອອກແບບ UI ໃຫ້ສວຍງາມ ແລະ ຮອງຮັບມືຖື -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- ນໍາເຂົ້າ Font ພາສາລາວ Noto Sans Lao ຈາກ Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans Lao', sans-serif;
+            user-select: none;
+        }
+        /* ປັບປຸງເອັບເຟັກ Balloon ໃຫ້ລອຍຈາກລຸ່ມສຸດຂຶ້ນເທິງສຸດຢ່າງສົມບູນ */
+        @keyframes floatUp {
+            0% { bottom: -120px; transform: scale(1); opacity: 1; }
+            90% { opacity: 0.9; }
+            100% { bottom: calc(100% + 20px); transform: scale(1.1); opacity: 0; }
+        }
+        .balloon {
+            position: absolute;
+            animation-name: floatUp;
+            animation-timing-function: linear;
+            animation-fill-mode: forwards;
+        }
+        /* Style ສຳລັບພາກສ່ວນຕ່າງໆຂອງ Mouse ໃນຮູບ SVG */
+        .mouse-part {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .mouse-part:hover {
+            filter: brightness(1.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- ສ່ວນຫົວເວັບໄຊ (Header) -->
+    <header class="bg-slate-800 border-b border-slate-700 py-4 px-6 shadow-lg">
+        <div class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">🖱️</span>
+                <div>
+                    <h1 class="text-xl font-bold text-sky-400">ລະບົບຝຶກທັກສະການໃຊ້ເມາົ້ສ໌</h1>
+                    <p class="text-xs text-slate-400">ສຳລັບນັກສຶກສາເລີ່ມຕົ້ນຮຽນຄອມພິວເຕີ</p>
+                </div>
+            </div>
+            <!-- ສະແດງສະຖານະບົດຮຽນ -->
+            <div id="lesson-indicator" class="flex gap-2">
+                <span id="indicator-1" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-700 text-slate-400 border border-slate-600 transition-all duration-300">ບົດທີ 1: Click</span>
+                <span id="indicator-2" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-700 text-slate-400 border border-slate-600 transition-all duration-300">ບົດທີ 2: Double Click</span>
+                <span id="indicator-3" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-700 text-slate-400 border border-slate-600 transition-all duration-300">ບົດທີ 3: Drag & Drop</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ສ່ວນເນື້ອຫາຫຼັກ (Main Workspace) -->
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="max-w-5xl w-full bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl p-6 min-h-[580px] flex flex-col justify-between relative overflow-hidden">
+            
+            <!-- 1. ໜ້າທຳອິດ (Welcome / Home Screen with Interactive Mouse Guide) -->
+            <div id="screen-home" class="grid grid-cols-1 lg:grid-cols-12 gap-8 py-4 items-center">
+                
+                <!-- ຝັ່ງຊ້າຍ: Interactive Mouse Model (SVG) -->
+                <div class="lg:col-span-5 flex flex-col items-center justify-center bg-slate-950/40 p-6 rounded-2xl border border-slate-700/50">
+                    <h3 class="text-sm font-semibold text-sky-400 mb-4 tracking-wider uppercase text-center">ທົດລອງຊີ້ ຫຼື ກົດໃສ່ຮູບເມາົ້ສ໌ ດ້ານລຸ່ມນີ້ 🖱️</h3>
+                    
+                    <!-- SVG ຮູບເມາົ້ສ໌ແຕ້ມຂຶ້ນມາເອງແບບປັບສີໄດ້ -->
+                    <svg width="220" height="340" viewBox="0 0 220 340" fill="none" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-[0_0_20px_rgba(56,189,248,0.15)]">
+                        <!-- ສາຍເມາົ້ສ໌ -->
+                        <path d="M110 0V30" stroke="#475569" stroke-width="4" stroke-linecap="round"/>
+                        
+                        <!-- ຕົວເມາົ້ສ໌ຫຼັກ (Body Background) -->
+                        <rect x="20" y="30" width="180" height="280" rx="90" fill="#1e293b" stroke="#475569" stroke-width="6"/>
+                        
+                        <!-- ປຸ່ມຄລິກຊ້າຍ (Left Click Button) -->
+                        <path id="mouse-left-btn" class="mouse-part fill-slate-700 stroke-slate-500" stroke-width="3" 
+                              d="M110 30H100C55 30 22 65 20 110V150H110V30Z" />
+                              
+                        <!-- ປຸ່ມຄລິກຂວา (Right Click Button) -->
+                        <path id="mouse-right-btn" class="mouse-part fill-slate-700 stroke-slate-500" stroke-width="3" 
+                              d="M110 30H120C165 30 198 65 200 110V150H110V30Z" />
+                        
+                        <!-- ລູກກິ້ງກາງເມາົ້ສ໌ (Scroll Wheel) -->
+                        <rect id="mouse-scroll-btn" class="mouse-part fill-sky-500 stroke-sky-300" stroke-width="1.5"
+                              x="102" y="70" width="16" height="45" rx="8" />
+                              
+                        <!-- ເສັ້ນແບ່ງກາງເມາົ້ສ໌ (Center Line) -->
+                        <line x1="110" y1="150" x2="110" y2="300" stroke="#475569" stroke-width="3" />
+                        
+                        <!-- ຕົວຈັບຫຼັກດ້ານລຸ່ມ (Body Grip Area) -->
+                        <path id="mouse-body-grip" class="mouse-part fill-slate-800/20" 
+                              d="M20 155C20 230 50 310 110 310C170 310 200 230 200 155H20Z" />
+                    </svg>
+
+                    <p class="text-xs text-slate-500 mt-4 text-center">ໃຊ້ປຸ່ມຊ້າຍເປັນຫຼັກໃນການຮຽນບົດຮຽນ</p>
+                </div>
+
+                <!-- ຝັ່ງຂວາ: Information & Controls -->
+                <div class="lg:col-span-7 flex flex-col justify-center gap-6">
+                    <div>
+                        <span class="bg-sky-500/10 text-sky-400 text-xs px-3 py-1 rounded-full border border-sky-500/20 font-bold uppercase tracking-wide">ສື່ການສອນພື້ນຖານ</span>
+                        <h2 class="text-3xl font-extrabold text-white mt-2 leading-tight">ຮຽນຮູ້ການໃຊ້ເມາົ້ສ໌ (Mouse Guide)</h2>
+                        <p class="text-slate-300 text-sm mt-2 leading-relaxed">
+                            ກ່ອນທີ່ພວກເຮົາຈະເລີ່ມທົດສອບ, ໃຫ້ນັກສຶກສາລອງເອົາເມາົ້ສ໌ໄປຊີ້ໃສ່ຮູບດ້ານຊ້າຍມື ເພື່ອອ່ານໜ້າທີ່ ແລະ ວິທີການໃຊ້ງານຂອງແຕ່ລະປຸ່ມ:
+                        </p>
+                    </div>
+
+                    <!-- ກ່ອງສະແດງຜົນການສອນແບບ Interactive -->
+                    <div id="guide-info-box" class="bg-slate-950/80 border border-slate-700/80 rounded-2xl p-5 min-h-[140px] flex items-start gap-4 transition-all duration-300 shadow-inner">
+                        <div class="text-4xl" id="guide-icon">🖱️</div>
+                        <div>
+                            <h4 class="text-lg font-bold text-sky-400" id="guide-title">ທົດລອງເລືອກປຸ່ມເມາົ້ສ໌</h4>
+                            <p class="text-slate-300 text-sm mt-1 leading-relaxed" id="guide-description">
+                                ລອງຊີ້ເມາົ້ສ໌ໃສ່ພາກສ່ວນຕ່າງໆຂອງເມາົ້ສ໌ຈຳລອງດ້ານຊ້າຍ ເພື່ອເບິ່ງວິທີການໃຊ້ງານ ແລະ ໜ້າທີ່ຂອງມັນທັນທີ.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- ປຸ່ມເລີ່ມຕົ້ນ -->
+                    <div class="flex flex-col sm:flex-row gap-4 mt-2">
+                        <button onclick="startLesson(1)" class="flex-1 px-8 py-4 bg-sky-500 hover:bg-sky-400 active:scale-95 text-slate-900 font-bold text-lg rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
+                            ເລີ່ມຕົ້ນການທົດສອບ (ບົດທີ 1) 🚀
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 2. ບົດທີ 1: Single Click Screen -->
+            <div id="screen-lesson-1" class="hidden flex-col h-full gap-4">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                    <div>
+                        <h3 class="text-xl font-bold text-sky-400">🎈 ບົດທີ 1: ການຄລິກຊ້າຍ (Single Click)</h3>
+                        <p class="text-sm text-slate-300">ວິທີຫຼິ້ນ: ຄລິກ <b>ປູມເປົ້າສີ</b> = +1 ຄະແນນ | <b>ປູມເປົ້າທອງ ⭐</b> = +3 ຄະແນນ | <b>ຫຼີກເວັ້ນ 💣 ສີດຳ</b> = -2 ຄະແນນ!</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="bg-slate-700/50 px-4 py-2 rounded-lg border border-slate-600 text-center min-w-[100px]">
+                            <span class="text-xs text-slate-400 block">ເວລາ</span>
+                            <span class="text-xl font-bold text-sky-400" id="l1-timer">00:00</span>
+                        </div>
+                        <div class="bg-slate-700/50 px-4 py-2 rounded-lg border border-slate-600 text-center min-w-[120px]">
+                            <span class="text-xs text-slate-400 block">ຄະແນນເປົ້າໝາຍ</span>
+                            <span class="text-2xl font-bold text-yellow-400" id="l1-score">0 / 40</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+                    <div id="l1-progress" class="bg-sky-400 h-full w-0 transition-all duration-300"></div>
+                </div>
+                <!-- ພື້ນທີ່ເກມຍິງປູມເປົ້າ -->
+                <div id="l1-game-area" class="flex-grow bg-slate-950/60 border border-slate-800 rounded-xl min-h-[380px] relative overflow-hidden cursor-crosshair">
+                    <!-- ໝາກປູມເປົ້າຈະຖືກສ້າງຂຶ້ນມາໃນນີ້ດ້ວຍ JS -->
+                </div>
+            </div>
+
+            <!-- 3. ບົດທີ 2: Double Click Screen -->
+            <div id="screen-lesson-2" class="hidden flex-col h-full gap-4">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                    <div>
+                        <h3 class="text-xl font-bold text-yellow-400">📦 ບົດທີ 2: ການດັບເບິ້ລຄລິກ (Double Click)</h3>
+                        <p class="text-sm text-slate-300">ວິທີຫຼິ້ນ: <b>ດັບເບິ້ລຄລິກ</b> ໃສ່ຫີບສົມບັດ 🔒 ເພື່ອເປີດເປັນ 🎁 | <b>ຫ້າມກົດຫີບຜີ 💀</b> (ຫັກ 1 ຄະແນນ)! ກົດໃຫ້ທັນກ່ອນມັນຫາຍໄປ!</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="bg-slate-700/50 px-4 py-2 rounded-lg border border-slate-600 text-center min-w-[100px]">
+                            <span class="text-xs text-slate-400 block">ເວລາ</span>
+                            <span class="text-xl font-bold text-yellow-400" id="l2-timer">00:00</span>
+                        </div>
+                        <div class="bg-slate-700/50 px-4 py-2 rounded-lg border border-slate-600 text-center min-w-[120px]">
+                            <span class="text-xs text-slate-400 block">ຫີບທີ່ເປີດແລ້ວ</span>
+                            <span class="text-2xl font-bold text-yellow-400" id="l2-score">0 / 25</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+                    <div id="l2-progress" class="bg-yellow-400 h-full w-0 transition-all duration-300"></div>
+                </div>
+                <!-- ພື້ນທີ່ດັບເບິ້ລຄລິກ -->
+                <div id="l2-game-area" class="flex-grow bg-slate-950/60 border border-slate-800 rounded-xl min-h-[380px] relative overflow-hidden">
+                    <!-- ຫີບສົມບັດຈະປາກົດແບບສຸ່ມໃນນີ້ -->
+                </div>
+            </div>
+
+            <!-- 4. ບົດທີ 3: Drag and Drop Screen -->
+            <div id="screen-lesson-3" class="hidden flex-col h-full gap-4">
+                <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                    <div>
+                        <h3 class="text-xl font-bold text-emerald-400">♻️ ບົດທີ 3: ການລາກແລ້ວວາງ (Drag & Drop)</h3>
+                        <p class="text-sm text-slate-300">ວິທີຫຼິ້ນ: ລາກສິ່ງຂອງຈາກສາຍພານດ້ານຊ້າຍ ໄປວາງໃສ່ຖັງຂີ້ເຫຍື້ອໃຫ້ຖືກຕ້ອງ (ວາງຜິດຫັກ 1 ຄະແນນ ແລະ ຂອງຈະເດັ້ງກັບ)!</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="bg-slate-700/50 px-4 py-2 rounded-lg border border-slate-600 text-center min-w-[100px]">
+                            <span class="text-xs text-slate-400 block">ເວລາ</span>
+                            <span class="text-xl font-bold text-emerald-400" id="l3-timer">00:00</span>
+                        </div>
+                        <div class="bg-slate-700/50 px-4 py-2 rounded-lg border border-slate-600 text-center min-w-[120px]">
+                            <span class="text-xs text-slate-400 block">ແຍກຖືກຕ້ອງ</span>
+                            <span class="text-2xl font-bold text-yellow-400" id="l3-score">0 / 20</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+                    <div id="l3-progress" class="bg-emerald-400 h-full w-0 transition-all duration-300"></div>
+                </div>
+                
+                <div class="flex flex-col md:flex-row gap-6 flex-grow min-h-[380px]">
+                    <!-- ກ່ອງເກັບສິ່ງຂອງທີ່ຈະໃຫ້ລາກ (ຄ້າຍສາຍພານລຳລຽງ) -->
+                    <div class="w-full md:w-1/3 bg-slate-950/40 border border-slate-800 p-4 rounded-xl flex md:flex-col gap-4 items-center justify-center relative" id="drag-items-container">
+                        <!-- ໄອເທັມລາກຈະປາກົດຂຶ້ນເທື່ອລະໜ່ວຍໃນນີ້ -->
+                    </div>
+
+                    <!-- ພື້ນທີ່ຖັງຂີ້ເຫຍື້ອ (Drop Targets) -->
+                    <div class="w-full md:w-2/3 grid grid-cols-2 gap-4" id="drop-targets-container">
+                        <!-- ຖັງຂີ້ເຫຍື້ອແຕ່ລະປະເພດ -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. ໜ້າສະຫຼຸບຜົນການທົດສອບ (Success Screen) -->
+            <div id="screen-success" class="hidden flex-col items-center justify-center text-center py-8 gap-6">
+                <div class="bg-emerald-500/10 p-6 rounded-full border border-emerald-500/20 animate-bounce">
+                    <span class="text-7xl">🎓</span>
+                </div>
+                <h2 class="text-3xl font-bold text-emerald-400">ຍິນດີດ້ວຍ! ເຈົ້າຜ່ານການທົດສອບທັງໝົດແລ້ວ!</h2>
+                <p class="text-slate-300 max-w-lg leading-relaxed">
+                    ນັກສຶກສາມີຄວາມຊໍານານໃນການໃຊ້ເມາົ້ສ໌ທັງ 3 ຮູບແບບຢ່າງສົມບູນແລ້ວ ພ້ອມທີ່ຈະກ້າວໄປສູ່ການຮຽນຮູ້ຂັ້ນຕອນຕໍ່ໄປໃນຫ້ອງຮຽນໄອທີ!
+                </p>
+                <div class="grid grid-cols-3 gap-4 max-w-md w-full bg-slate-950/40 border border-slate-700 p-4 rounded-xl">
+                    <div class="text-center">
+                        <span class="text-xs text-slate-400 block">ບົດທີ 1</span>
+                        <span class="text-sm font-semibold text-sky-400" id="final-l1-time">--:--</span>
+                    </div>
+                    <div class="text-center border-x border-slate-800">
+                        <span class="text-xs text-slate-400 block">ບົດທີ 2</span>
+                        <span class="text-sm font-semibold text-yellow-400" id="final-l2-time">--:--</span>
+                    </div>
+                    <div class="text-center">
+                        <span class="text-xs text-slate-400 block">ບົດທີ 3</span>
+                        <span class="text-sm font-semibold text-emerald-400" id="final-l3-time">--:--</span>
+                    </div>
+                </div>
+                <button onclick="resetGame()" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-xl border border-slate-600 transition-all cursor-pointer">
+                    ກັບໄປເລີ່ມໃໝ່ 🔄
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ສ່ວນທ້າຍເວັບໄຊ (Footer) -->
+    <footer class="bg-slate-950 py-3 text-center text-xs text-slate-500 border-t border-slate-900">
+        <p>© 2026 ລະບົບຝຶກທັກສະໄອທີ - ສ້າງຂຶ້ນເພື່ອເປັນສື່ການຮຽນການສອນໃນປະເທດລາວ 🇱🇦</p>
+    </footer>
+
+    <!-- ລະບົບ Logic ເກມ (JavaScript) -->
+    <script>
+        // ----------------------------------------------------
+        // ລະບົບສຽງເອັບເຟັກ (Web Audio API Synthesizer)
+        // ----------------------------------------------------
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'bomb') {
+                // ສຽງລະເບີດຕອນກົດໂດນລູກສີດຳ
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.linearRampToValueAtTime(30, now + 0.4);
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'gold') {
+                // ສຽງເກັບໝາກປູມເປົ້າພິເສດ
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(587.33, now); // D5
+                osc.frequency.setValueAtTime(880, now + 0.1);    // A5
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'doubleclick') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'drop-success') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'drop-fail') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(80, now + 0.2);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'complete') {
+                osc.type = 'sine';
+                const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+                notes.forEach((freq, idx) => {
+                    const oscSeq = audioCtx.createOscillator();
+                    const gainSeq = audioCtx.createGain();
+                    oscSeq.connect(gainSeq);
+                    gainSeq.connect(audioCtx.destination);
+                    oscSeq.frequency.setValueAtTime(freq, now + (idx * 0.1));
+                    gainSeq.gain.setValueAtTime(0.15, now + (idx * 0.1));
+                    gainSeq.gain.exponentialRampToValueAtTime(0.01, now + (idx * 0.1) + 0.2);
+                    oscSeq.start(now + (idx * 0.1));
+                    oscSeq.stop(now + (idx * 0.1) + 0.2);
+                });
+            } else if (type === 'hover-ui') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            }
+        }
+
+        // ----------------------------------------------------
+        // ລະບົບຄຸ້ມຄອງການປ່ຽນໜ້າຈໍ, ເວລາ ແລະ ສະຖານະ
+        // ----------------------------------------------------
+        let currentLesson = 0;
+        let l1Score = 0;
+        let l2Score = 0;
+        let l3Score = 0;
+        
+        let balloonInterval;
+        let chestSpawnInterval;
+        let timerInterval;
+        
+        let lessonSeconds = 0;
+        let l1TimeStr = "";
+        let l2TimeStr = "";
+        let l3TimeStr = "";
+
+        function showScreen(screenId) {
+            document.getElementById('screen-home').classList.add('hidden');
+            document.getElementById('screen-lesson-1').classList.add('hidden');
+            document.getElementById('screen-lesson-2').classList.add('hidden');
+            document.getElementById('screen-lesson-3').classList.add('hidden');
+            document.getElementById('screen-success').classList.add('hidden');
+
+            if (screenId === 'screen-home') {
+                document.getElementById(screenId).classList.remove('hidden');
+                document.getElementById(screenId).classList.add('grid');
+            } else {
+                document.getElementById(screenId).classList.remove('hidden');
+                document.getElementById(screenId).classList.add('flex');
+            }
+        }
+
+        function updateIndicators() {
+            for (let i = 1; i <= 3; i++) {
+                const ind = document.getElementById(`indicator-${i}`);
+                if (currentLesson === i) {
+                    ind.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-sky-500 text-slate-900 border border-sky-400 font-bold shadow-md shadow-sky-500/20 scale-105 transition-all duration-300";
+                } else if (currentLesson > i) {
+                    ind.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-all duration-300";
+                } else {
+                    ind.className = "px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-700 text-slate-400 border border-slate-600 transition-all duration-300";
+                }
+            }
+        }
+
+        // ເຄື່ອງມືນັບເວລາຂອງແຕ່ລະບົດຮຽນ
+        function startLessonTimer(timerElementId) {
+            lessonSeconds = 0;
+            clearInterval(timerInterval);
+            const timerElement = document.getElementById(timerElementId);
+            timerElement.innerText = "00:00";
+            
+            timerInterval = setInterval(() => {
+                lessonSeconds++;
+                const mins = String(Math.floor(lessonSeconds / 60)).padStart(2, '0');
+                const secs = String(lessonSeconds % 60).padStart(2, '0');
+                timerElement.innerText = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopLessonTimer() {
+            clearInterval(timerInterval);
+            const mins = String(Math.floor(lessonSeconds / 60)).padStart(2, '0');
+            const secs = String(lessonSeconds % 60).padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+
+        function startLesson(lessonNum) {
+            currentLesson = lessonNum;
+            updateIndicators();
+            
+            // ລ້າງ Interval ເກົ່າທັງໝົດກ່ອນເລີ່ມ
+            clearInterval(balloonInterval);
+            clearInterval(chestSpawnInterval);
+            clearInterval(timerInterval);
+
+            if (lessonNum === 1) {
+                l1Score = 0;
+                document.getElementById('l1-score').innerText = `0 / 40`;
+                document.getElementById('l1-progress').style.width = '0%';
+                showScreen('screen-lesson-1');
+                startLessonTimer('l1-timer');
+                initLesson1();
+            } else if (lessonNum === 2) {
+                l2Score = 0;
+                document.getElementById('l2-score').innerText = `0 / 25`;
+                document.getElementById('l2-progress').style.width = '0%';
+                showScreen('screen-lesson-2');
+                startLessonTimer('l2-timer');
+                initLesson2();
+            } else if (lessonNum === 3) {
+                l3Score = 0;
+                document.getElementById('l3-score').innerText = `0 / 20`;
+                document.getElementById('l3-progress').style.width = '0%';
+                showScreen('screen-lesson-3');
+                startLessonTimer('l3-timer');
+                initLesson3();
+            }
+        }
+
+        function resetGame() {
+            currentLesson = 0;
+            updateIndicators();
+            showScreen('screen-home');
+            initInteractiveMouse();
+        }
+
+        // ----------------------------------------------------
+        // ລະບົບສອນການໃຊ້ Mouse (Interactive Mouse Guide)
+        // ----------------------------------------------------
+        const mouseParts = {
+            'mouse-left-btn': {
+                title: 'ຄລິກຊ້າຍ (Left Click) 👈',
+                icon: '👈',
+                color: 'fill-sky-500',
+                desc: 'ແມ່ນປຸ່ມທີ່ໃຊ້ຫຼາຍທີ່ສຸດ! ໃຊ້ນິ້ວຊີ້ກົດ 1 ຄັ້ງ ເພື່ອເລືອກສິ່ງຂອງ, ກົດປຸ່ມ ຫຼື ຍິງປູມເປົ້າໃນບົດຮຽນທີ 1 ຂອງພວກເຮົາ.'
+            },
+            'mouse-right-btn': {
+                title: 'ຄລິກຂວາ (Right Click) 👉',
+                icon: '👉',
+                color: 'fill-purple-500',
+                desc: 'ໃຊ້ນິ້ວາງກົດ 1 ຄັ້ງ ເພື່ອເປີດເມນູທາງເລືອກເພີ່ມເຕີມ (Context Menu) ຫຼື ຄຳສັ່ງພິເສດຕ່າງໆໃນໂປຣແກຣມ.'
+            },
+            'mouse-scroll-btn': {
+                title: 'ລູກກິ້ງກາງ (Scroll Wheel) 🎡',
+                icon: '🎡',
+                color: 'fill-yellow-500',
+                desc: 'ໃຊ້ນິ້ວຊີ້ໝູນຂຶ້ນ ຫຼື ໝູນລົງລຸ່ມ ເພື່ອເລື່ອນເບິ່ງໜ້າຈໍເວັບໄຊ ຫຼື ເອກະສານທີ່ມີຄວາມຍາວ ໂດຍບໍ່ຕ້ອງກົດປຸ່ມໃດໆ.'
+            },
+            'mouse-body-grip': {
+                title: 'ການຈັບເມາົ້ສ໌ (Mouse Grip) 🤝',
+                icon: '🤝',
+                color: 'fill-emerald-500',
+                desc: 'ວິທີຈັບທີ່ຖືກတော့: ວາງອຸ້ງມືໃສ່ຕົວເມາົ້ສ໌, ນິ້ວຊີ້ວາງຢູ່ປຸ່ມຊ້າຍ, ນິ້ວາງວາງຢູ່ປຸ່ມຂວາ ແລະ ນі້ວອື່ນໆຈັບປະຄອງດ້ານຂ້າງໄວ້ໃຫ້ສະບາຍມື.'
+            }
+        };
+
+        function initInteractiveMouse() {
+            const infoBox = document.getElementById('guide-info-box');
+            const infoIcon = document.getElementById('guide-icon');
+            const infoTitle = document.getElementById('guide-title');
+            const infoDesc = document.getElementById('guide-description');
+
+            Object.keys(mouseParts).forEach(id => {
+                const element = document.getElementById(id);
+                const originalClass = element.getAttribute('class');
+
+                element.addEventListener('mouseenter', () => {
+                    playSound('hover-ui');
+                    element.setAttribute('class', `mouse-part ${mouseParts[id].color} stroke-white scale-105`);
+                    
+                    infoBox.className = "bg-slate-950/90 border border-sky-500/50 rounded-2xl p-5 min-h-[140px] flex items-start gap-4 transition-all duration-300 shadow-lg shadow-sky-500/10 scale-[1.02]";
+                    infoIcon.innerText = mouseParts[id].icon;
+                    infoTitle.innerText = mouseParts[id].title;
+                    infoTitle.className = "text-lg font-bold text-sky-400";
+                    infoDesc.innerText = mouseParts[id].desc;
+                });
+
+                element.addEventListener('mouseleave', () => {
+                    element.setAttribute('class', originalClass);
+                    infoBox.className = "bg-slate-950/80 border border-slate-700/80 rounded-2xl p-5 min-h-[140px] flex items-start gap-4 transition-all duration-300 shadow-inner";
+                });
+
+                element.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    playSound('click');
+                    element.style.opacity = '0.6';
+                    setTimeout(() => { element.style.opacity = '1'; }, 100);
+                });
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initInteractiveMouse();
+        });
+
+        // ----------------------------------------------------
+        // ບົດທີ 1: Single Click Logic (ເພີ່ມຄວາມຍາກ + ລະບົບຄະແນນໃໝ່)
+        // ----------------------------------------------------
+        const balloonColors = ['bg-red-500', 'bg-sky-500', 'bg-yellow-500', 'bg-emerald-500', 'bg-purple-500', 'bg-pink-500'];
+        
+        function initLesson1() {
+            const gameArea = document.getElementById('l1-game-area');
+            gameArea.innerHTML = ''; 
+
+            // ສ້າງປູມເປົ້າໃໝ່ທຸກໆ 0.8 ວິນາທີ ເພື່ອຄວາມຕໍ່ເນື່ອງ ແລະ ໄວຂຶ້ນ
+            balloonInterval = setInterval(() => {
+                if (l1Score >= 40) {
+                    clearInterval(balloonInterval);
+                    return;
+                }
+                createAdvancedBalloon();
+            }, 800);
+        }
+
+        function createAdvancedBalloon() {
+            const gameArea = document.getElementById('l1-game-area');
+            const balloon = document.createElement('div');
+            
+            // ສຸ່ມປະເພດໝາກປູມເປົ້າ: 70% ທຳມະດາ, 15% ລະເບີດສີດຳ, 15% ສີທອງພິເສດ
+            const randType = Math.random();
+            let bType = 'normal';
+            let colorClass = balloonColors[Math.floor(Math.random() * balloonColors.length)];
+            let iconText = '';
+            
+            if (randType > 0.85) {
+                bType = 'gold';
+                colorClass = 'bg-gradient-to-br from-yellow-300 via-yellow-500 to-amber-600 border border-yellow-300';
+                iconText = '<span class="text-xs font-extrabold text-yellow-100 animate-pulse">⭐</span>';
+            } else if (randType < 0.15) {
+                bType = 'bomb';
+                colorClass = 'bg-slate-950 border-2 border-red-500';
+                iconText = '<span class="text-xs">💣</span>';
+            }
+
+            const size = bType === 'gold' ? 38 : (bType === 'bomb' ? 45 : Math.floor(Math.random() * 15) + 45); 
+            const randomLeft = Math.random() * (gameArea.clientWidth - size - 15);
+            
+            // ຄວາມໄວໃນການລອຍຈະໄວຂຶ້ນເລື່ອຍໆ ຕາມຄະແນນປັດຈຸບັນ
+            const speedBoost = Math.min(l1Score * 0.05, 2.5); // ສູງສຸດໄວຂຶ້ນ 2.5 ວິນາທີ
+            const duration = Math.max((Math.random() * 2 + 4) - speedBoost, 1.8); 
+
+            balloon.className = `balloon rounded-full cursor-pointer shadow-lg flex flex-col items-center justify-center transition-transform hover:scale-105`;
+            balloon.style.width = `${size}px`;
+            balloon.style.height = `${size * 1.25}px`;
+            balloon.style.left = `${randomLeft}px`;
+            balloon.style.animationDuration = `${duration}s`;
+            balloon.classList.add(...colorClass.split(' '));
+
+            // ຫາງປູມເປົ້າ
+            balloon.innerHTML = `
+                ${iconText}
+                <div class="absolute -bottom-2 w-1.5 h-1.5 bg-inherit rotate-45"></div>
+                <div class="absolute -bottom-6 w-0.5 h-4 bg-slate-400/80"></div>
+            `;
+
+            // ການຄລິກໃສ່ປູມເປົ້າ
+            balloon.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                
+                if (bType === 'bomb') {
+                    playSound('bomb');
+                    l1Score = Math.max(l1Score - 2, 0); // ຫັກ 2 ຄະແນນ
+                    balloon.className = `balloon bg-red-600 scale-150 opacity-0 transition-all duration-200`;
+                } else if (bType === 'gold') {
+                    playSound('gold');
+                    l1Score = Math.min(l1Score + 3, 40); // ບວກ 3 ຄະແນນ
+                    balloon.className = `balloon bg-yellow-300 scale-150 opacity-0 transition-all duration-200`;
+                } else {
+                    playSound('click');
+                    l1Score = Math.min(l1Score + 1, 40); // ບວກ 1 ຄະແນນ
+                    balloon.className = `balloon bg-white scale-120 opacity-0 transition-all duration-200`;
+                }
+                
+                balloon.style.pointerEvents = 'none';
+                setTimeout(() => { balloon.remove(); }, 200);
+
+                // ອັບເດດຄະແນນ ແລະ Progress Bar
+                document.getElementById('l1-score').innerText = `${l1Score} / 40`;
+                const progressPct = (l1Score / 40) * 100;
+                document.getElementById('l1-progress').style.width = `${progressPct}%`;
+
+                // ຖ້າຜ່ານດ່ານ
+                if (l1Score >= 40) {
+                    clearInterval(balloonInterval);
+                    l1TimeStr = stopLessonTimer();
+                    playSound('complete');
+                    setTimeout(() => {
+                        startLesson(2); 
+                    }, 1200);
+                }
+            });
+
+            balloon.addEventListener('animationend', () => {
+                balloon.remove();
+            });
+
+            gameArea.appendChild(balloon);
+        }
+
+        // ----------------------------------------------------
+        // ບົດທີ 2: Double Click Logic ( Whack-A-Mole Style )
+        // ----------------------------------------------------
+        function initLesson2() {
+            const gameArea = document.getElementById('l2-game-area');
+            gameArea.innerHTML = ''; 
+
+            // ສ້າງຫີບສົມບັດແບບສຸ່ມທຸກໆ 1.2 ວິນາທີ
+            chestSpawnInterval = setInterval(() => {
+                if (l2Score >= 25) {
+                    clearInterval(chestSpawnInterval);
+                    return;
+                }
+                spawnRandomChest();
+            }, 1200);
+        }
+
+        function spawnRandomChest() {
+            const gameArea = document.getElementById('l2-game-area');
+            const chestContainer = document.createElement('div');
+            
+            // 80% ຫີບສົມບັດປົກກະຕິ, 20% ຫີບຜີປີສາດ
+            const isMimic = Math.random() < 0.2;
+            
+            chestContainer.className = "absolute flex flex-col items-center gap-1 bg-slate-800 border-2 border-slate-700 p-2 rounded-xl shadow-lg w-28 hover:border-yellow-500/50 transition-all duration-200 transform scale-0 opacity-0";
+            
+            const chest = document.createElement('div');
+            chest.className = "text-4xl cursor-pointer select-none transition-transform active:scale-90 filter drop-shadow";
+            chest.innerHTML = isMimic ? "💀" : "🔒"; 
+            
+            const label = document.createElement('span');
+            label.className = "text-[10px] text-slate-400 font-semibold";
+            label.innerText = isMimic ? "ຫີບຜີປີສາດ!" : "ດັບເບິ້ລຄລິກ!";
+
+            chestContainer.appendChild(chest);
+            chestContainer.appendChild(label);
+
+            // ກຳນົດຕຳແໜ່ງແບບສຸ່ມພາຍໃນກ່ອງເກມ
+            const maxX = gameArea.clientWidth - 120;
+            const maxY = gameArea.clientHeight - 100;
+            const randomX = Math.random() * maxX;
+            const randomY = Math.random() * maxY;
+
+            chestContainer.style.left = `${randomX}px`;
+            chestContainer.style.top = `${randomY}px`;
+
+            // ເຮັດໃຫ້ປາກົດຂຶ້ນແບບ Anime
+            gameArea.appendChild(chestContainer);
+            setTimeout(() => {
+                chestContainer.classList.remove('scale-0', 'opacity-0');
+                chestContainer.classList.add('scale-100', 'opacity-100');
+            }, 50);
+
+            // ລະບົບ Double Click
+            chest.addEventListener('dblclick', () => {
+                if (isMimic) {
+                    playSound('bomb'); // ຫັກຄະແນນ
+                    l2Score = Math.max(l2Score - 1, 0);
+                    chest.innerHTML = "💥";
+                    chestContainer.classList.add('bg-red-500/20', 'border-red-500');
+                } else {
+                    if (chest.innerHTML === "🔒") {
+                        playSound('doubleclick'); // ບວກຄະແນນ
+                        l2Score = Math.min(l2Score + 1, 25);
+                        chest.innerHTML = "🎁";
+                        chestContainer.classList.add('bg-yellow-500/20', 'border-yellow-500');
+                    }
+                }
+
+                // ອັບເດດ UI
+                document.getElementById('l2-score').innerText = `${l2Score} / 25`;
+                const progressPct = (l2Score / 25) * 100;
+                document.getElementById('l2-progress').style.width = `${progressPct}%`;
+                
+                chest.style.pointerEvents = 'none';
+
+                // ຫາຍໄປຫຼັງຈາກຖືກກົດແລ້ວ
+                setTimeout(() => {
+                    chestContainer.classList.add('scale-0', 'opacity-0');
+                    setTimeout(() => { chestContainer.remove(); }, 200);
+                }, 800);
+
+                // ເຊັກເງື່ອນໄຂຜ່ານດ່ານ
+                if (l2Score >= 25) {
+                    clearInterval(chestSpawnInterval);
+                    // ລຶບຫີບທີ່ເຫຼືອທັງໝົດໃນຈໍ
+                    gameArea.querySelectorAll('.absolute').forEach(el => el.remove());
+                    l2TimeStr = stopLessonTimer();
+                    playSound('complete');
+                    setTimeout(() => {
+                        startLesson(3); 
+                    }, 1200);
+                }
+            });
+
+            // ຫາຍໄປເອງພາຍໃນ 3 ວິນາທີ ຖ້າດັບເບິ້ລຄລິກບໍ່ທັນ
+            setTimeout(() => {
+                if (chestContainer.parentNode === gameArea && chest.innerHTML !== "🎁" && chest.innerHTML !== "💥") {
+                    chestContainer.classList.add('scale-0', 'opacity-0');
+                    setTimeout(() => { chestContainer.remove(); }, 200);
+                }
+            }, 3000);
+        }
+
+        // ----------------------------------------------------
+        // ບົດທີ 3: Drag and Drop Logic (ສາຍພານລຳລຽງຂີ້ເຫຍື້ອໄຫຼຕໍ່ເນື່ອງ)
+        // ----------------------------------------------------
+        // ຄັງຂໍ້ມູນຂີ້ເຫຍື້ອແບບລະອຽດ 12 ຊະນິດ
+        const advancedItemsData = [
+            // 1. Recycle
+            { name: 'ຕຸກຢາງປລາສະຕິກ', icon: '🍼', type: 'recycle' },
+            { name: 'ກະປ໋ອງນ້ຳຫວານ', icon: '🥫', type: 'recycle' },
+            { name: 'ຕຸກແກ້ວເປົ່າ', icon: '🍾', type: 'recycle' },
+            // 2. Organic
+            { name: 'ເສດໝາກໄມ້', icon: '🍎', type: 'organic' },
+            { name: 'ກະດູກໄກ່', icon: '🍗', type: 'organic' },
+            { name: 'ໃບໄມ້ແຫ້ງ', icon: '🍂', type: 'organic' },
+            // 3. Hazardous
+            { name: 'ແບັດເຕີຣີເກົ່າ', icon: '🔋', type: 'hazardous' },
+            { name: 'ຫຼອດໄຟແຕກ', icon: '💡', type: 'hazardous' },
+            { name: 'ກະປ໋ອງສະເປ', icon: '💨', type: 'hazardous' },
+            // 4. General
+            { name: 'ຖົງຢາງປລາສະຕິກ', icon: '🛍️', type: 'general' },
+            { name: 'ກ່ອງໂຟມໃສ່ອາຫານ', icon: '📦', type: 'general' },
+            { name: 'ເຈ້ຍທິດຊູໃຊ້ແລ້ວ', icon: '🧻', type: 'general' }
+        ];
+
+        const advancedBinsData = [
+            { type: 'recycle', name: 'ຂີ້ເຫຍື້ອຄືນຮູບ (Recycle)', color: 'border-blue-500/30 hover:border-blue-500 hover:bg-blue-500/10', labelColor: 'text-blue-400', icon: '♻️' },
+            { type: 'organic', name: 'ຂີ້ເຫຍື້ອປຽກ (Organic)', color: 'border-emerald-500/30 hover:border-emerald-500 hover:bg-emerald-500/10', labelColor: 'text-emerald-400', icon: '🍂' },
+            { type: 'hazardous', name: 'ຂີ້ເຫຍື້ອອັນຕະລາຍ', color: 'border-red-500/30 hover:border-red-500 hover:bg-red-500/10', labelColor: 'text-red-400', icon: '⚠️' },
+            { type: 'general', name: 'ຂີ້ເຫຍື້ອທົ່ວໄປ (General)', color: 'border-amber-500/30 hover:border-amber-500 hover:bg-amber-500/10', labelColor: 'text-amber-400', icon: '🗑️' }
+        ];
+
+        function initLesson3() {
+            const dropContainer = document.getElementById('drop-targets-container');
+            dropContainer.innerHTML = '';
+
+            // 1. ສ້າງຖັງຂີ້ເຫຍື້ອທັງ 4 ປະເພດຄືເກົ່າ
+            advancedBinsData.forEach(bin => {
+                const binElement = document.createElement('div');
+                binElement.className = `flex flex-col items-center justify-center p-4 bg-slate-900/60 border-2 border-dashed ${bin.color} rounded-xl transition-all duration-300 h-full min-h-[145px]`;
+                binElement.innerHTML = `
+                    <span class="text-5xl mb-2">${bin.icon}</span>
+                    <span class="text-xs font-bold ${bin.labelColor} text-center leading-tight">${bin.name}</span>
+                    <span class="text-[10px] text-slate-500 mt-1">ວາງໃສ່ນີ້</span>
+                `;
+
+                binElement.addEventListener('dragover', (e) => { e.preventDefault(); });
+                binElement.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const itemId = e.dataTransfer.getData('text/plain');
+                    const draggedElement = document.getElementById(itemId);
+                    
+                    if (!draggedElement) return;
+
+                    const itemType = draggedElement.getAttribute('data-type');
+
+                    if (itemType === bin.type) {
+                        // ແຍກຖືກຕ້ອງ!
+                        playSound('drop-success');
+                        draggedElement.remove();
+                        
+                        binElement.classList.add('bg-emerald-500/20', 'border-emerald-500');
+                        setTimeout(() => {
+                            binElement.classList.remove('bg-emerald-500/20', 'border-emerald-500');
+                        }, 500);
+
+                        l3Score++;
+                        document.getElementById('l3-score').innerText = `${l3Score} / 20`;
+                        const progressPct = (l3Score / 20) * 100;
+                        document.getElementById('l3-progress').style.width = `${progressPct}%`;
+
+                        if (l3Score >= 20) {
+                            l3TimeStr = stopLessonTimer();
+                            playSound('complete');
+                            setTimeout(() => {
+                                showSuccessScreen();
+                            }, 1200);
+                        } else {
+                            // ສ້າງຂີ້ເຫຍື້ອອັນໃໝ່ຂຶ້ນມາທັນທີ
+                            spawnNewTrashItem();
+                        }
+                    } else {
+                        // ແຍກຜິດ!
+                        playSound('drop-fail');
+                        l3Score = Math.max(l3Score - 1, 0); // ຫັກ 1 ຄະແນນ
+                        document.getElementById('l3-score').innerText = `${l3Score} / 20`;
+                        const progressPct = (l3Score / 20) * 100;
+                        document.getElementById('l3-progress').style.width = `${progressPct}%`;
+
+                        binElement.classList.add('bg-red-500/20', 'border-red-500');
+                        setTimeout(() => {
+                            binElement.classList.remove('bg-red-500/20', 'border-red-500');
+                        }, 500);
+
+                        // ເຮັດໃຫ້ໄອເທັມກັບມາເບິ່ງປົກກະຕິໃນກ່ອງ
+                        draggedElement.classList.remove('opacity-50');
+                    }
+                });
+
+                dropContainer.appendChild(binElement);
+            });
+
+            // 2. ສ້າງຂີ້ເຫຍື້ອໜ່ວຍທຳອິດ
+            spawnNewTrashItem();
+        }
+
+        // ຟັງຊັນສ້າງຂີ້ເຫຍື້ອໜ່ວຍໃໝ່ແບບສຸ່ມຫຼາກຫຼາຍ
+        function spawnNewTrashItem() {
+            const dragContainer = document.getElementById('drag-items-container');
+            dragContainer.innerHTML = ''; // ລ້າງອັນເກົ່າອອກກ່ອນ
+
+            const randItem = advancedItemsData[Math.floor(Math.random() * advancedItemsData.length)];
+            const element = document.createElement('div');
+            
+            element.id = 'active-trash';
+            element.draggable = true;
+            element.setAttribute('data-type', randItem.type);
+            element.className = "flex flex-col items-center justify-center p-3 bg-slate-800 border-2 border-sky-400/50 rounded-2xl cursor-grab active:cursor-grabbing w-32 h-32 hover:scale-105 transition-all duration-200 shadow-lg animate-pulse";
+            element.innerHTML = `
+                <span class="text-5xl mb-2">${randItem.icon}</span>
+                <span class="text-xs text-slate-200 text-center font-bold leading-tight px-1">${randItem.name}</span>
+            `;
+
+            element.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', element.id);
+                element.classList.add('opacity-50');
+            });
+
+            element.addEventListener('dragend', () => {
+                element.classList.remove('opacity-50');
+            });
+
+            dragContainer.appendChild(element);
+        }
+
+        // ສະແດງຜົນການທົດສອບທັງໝົດ
+        function showSuccessScreen() {
+            showScreen('screen-success');
+            currentLesson = 4;
+            updateIndicators();
+            
+            document.getElementById('final-l1-time').innerText = l1TimeStr;
+            document.getElementById('final-l2-time').innerText = l2TimeStr;
+            document.getElementById('final-l3-time').innerText = l3TimeStr;
+        }
+    </script>
+</body>
+</html>

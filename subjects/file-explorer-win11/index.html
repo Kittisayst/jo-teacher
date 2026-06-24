@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="lo">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ຮຽນຮູ້ File Explorer ໃນ Windows 11</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Lao:wght@100..900&display=swap"
+      rel="stylesheet"
+    />
+<style>
+  :root{
+    --blue:#2563eb; --blue-soft:#e8f0fe; --ink:#1f2937; --muted:#6b7280;
+    --line:#e5e7eb; --bg:#f3f4f6; --white:#ffffff; --folder:#f4b740;
+    --green:#16a34a; --green-soft:#dcf7e3; --red:#dc2626; --red-soft:#fde2e2;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Noto Sans Lao","Phetsarath OT","Saysettha OT","Noto Sans",system-ui,sans-serif;
+    line-height:1.6; padding:18px;
+  }
+  .page{max-width:920px;margin:0 auto}
+  header h1{font-size:24px;font-weight:600;margin:0 0 4px}
+  header p{margin:0 0 16px;color:var(--muted);font-size:15px}
+
+  /* ---- top tabs ---- */
+  .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+  .tabbtn{font-family:inherit;font-size:15px;border:1px solid var(--line);background:#fff;color:var(--ink);
+          padding:10px 18px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:8px}
+  .tabbtn:hover{background:#f3f4f6}
+  .tabbtn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .tabbtn .ico{width:18px;height:18px}
+  .sec{display:none}
+  .sec.on{display:block}
+
+  /* ---- File Explorer window ---- */
+  .win{background:var(--white);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+       box-shadow:0 6px 22px rgba(0,0,0,.06);min-width:560px}
+  .winwrap{overflow-x:auto;background:#e9eaee;border-radius:14px;padding:14px}
+  .hot{position:relative;cursor:pointer;outline:2px solid transparent;outline-offset:-2px;transition:.12s}
+  .hot:hover{outline-color:#9bbcf5}
+  .hot.sel{outline-color:var(--blue);background:var(--blue-soft)}
+  .num{position:absolute;top:4px;left:4px;z-index:6;width:20px;height:20px;border-radius:50%;
+       background:var(--blue);color:#fff;font-size:12px;font-weight:600;display:flex;
+       align-items:center;justify-content:center;box-shadow:0 0 0 2px #fff}
+
+  .ico{width:18px;height:18px;stroke:currentColor;stroke-width:1.7;fill:none;
+       stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+
+  .tabbar{background:#f0f1f4;padding:6px 8px 0 30px;display:flex;align-items:flex-end;gap:6px;border-bottom:1px solid var(--line)}
+  .ftab{background:#fff;border:1px solid var(--line);border-bottom:none;border-radius:8px 8px 0 0;
+       padding:5px 12px;display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink)}
+  .ftab .ico{color:var(--folder)}
+
+  .toolbar{padding:8px 10px 8px 30px;display:flex;align-items:center;gap:16px;color:var(--muted);border-bottom:1px solid var(--line)}
+  .toolbar .lbl{display:flex;align-items:center;gap:5px;font-size:13px}
+  .toolbar .sep{margin-left:auto;display:flex;gap:14px}
+
+  .navrow{padding:8px 10px 8px 30px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+  .navbtns{display:flex;align-items:center;gap:10px;color:var(--muted);padding:2px}
+  .addr{flex:1;display:flex;align-items:center;gap:6px;font-size:13px;background:#f7f8fa;
+        border:1px solid var(--line);border-radius:7px;padding:6px 10px}
+  .addr .chev{color:#9ca3af}
+  .srch{width:160px;display:flex;align-items:center;gap:6px;font-size:13px;color:#9ca3af;
+        background:#f7f8fa;border:1px solid var(--line);border-radius:7px;padding:6px 10px}
+
+  .body{display:flex;min-height:230px}
+  .navpane{width:170px;border-right:1px solid var(--line);padding:24px 8px 8px;display:flex;flex-direction:column;gap:2px}
+  .navit{display:flex;align-items:center;gap:9px;padding:5px 8px;border-radius:7px;font-size:13px;color:var(--ink)}
+  .navit.on{background:var(--blue-soft);color:var(--blue);font-weight:500}
+  .navit.sub{padding-left:22px;color:#4b5563}
+  .navit .ico{color:#7b8494}
+  .navit.on .ico{color:var(--blue)}
+
+  .content{flex:1;padding:26px 14px 14px;display:grid;
+           grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:14px;align-content:start}
+  .item{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:12px;text-align:center}
+  .item .big{width:42px;height:42px;stroke-width:1.4}
+
+  .status{padding:6px 10px 6px 30px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+
+  /* ---- detail + stepper ---- */
+  .detail{margin-top:14px;background:var(--white);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-height:96px}
+  .detail .dhead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .detail .badge{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;
+        font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .detail .title{font-size:17px;font-weight:600}
+  .detail .text{margin:0;color:#374151;font-size:15px}
+  .hint{color:var(--muted);font-size:15px}
+
+  .stepper{margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .btn{font-family:inherit;font-size:14px;border:1px solid var(--line);background:#fff;color:var(--ink);
+       padding:8px 16px;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .btn:hover{background:#f3f4f6}
+  .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .btn.primary:hover{background:#1d4fd0}
+  .btn:disabled{opacity:.45;cursor:default}
+  .dots{display:flex;gap:6px;margin-left:auto}
+  .dot{width:9px;height:9px;border-radius:50%;background:#d1d5db;cursor:pointer}
+  .dot.on{background:var(--blue)}
+
+  /* ---- how-to cards ---- */
+  .howgrid{display:grid;grid-template-columns:1fr;gap:14px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .card h3{margin:0 0 12px;font-size:17px;display:flex;align-items:center;gap:9px}
+  .card h3 .cn{width:28px;height:28px;border-radius:8px;background:var(--blue-soft);color:var(--blue);
+        display:flex;align-items:center;justify-content:center}
+  .steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+  .steps li{display:flex;gap:10px;font-size:15px}
+  .steps li .sn{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:#eef2ff;color:var(--blue);
+        font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .kbd{display:inline-block;background:#f3f4f6;border:1px solid #d1d5db;border-bottom-width:2px;border-radius:6px;
+       padding:1px 7px;font-family:monospace;font-size:13px;color:#111;margin:0 2px}
+
+  /* ---- sandbox ---- */
+  .sandbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .sbtn{font-family:inherit;font-size:14px;border:1px solid var(--line);background:#fff;color:var(--ink);
+        padding:8px 13px;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .sbtn:hover{background:#f3f4f6}
+  .sbtn .ico{color:var(--blue)}
+  .sandbox{background:#fff;border:1px solid var(--line);border-radius:12px;min-height:170px;padding:16px;
+           display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:14px;align-content:start}
+  .sitem{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;text-align:center;
+         padding:8px 4px;border-radius:9px;cursor:pointer;border:2px solid transparent}
+  .sitem:hover{background:#f6f8fc}
+  .sitem.on{background:var(--blue-soft);border-color:var(--blue)}
+  .sitem .big{width:44px;height:44px;stroke-width:1.4}
+  .sitem input{font-family:inherit;font-size:12px;text-align:center;width:88px;border:1px solid var(--blue);border-radius:4px;padding:2px}
+  .saylog{margin-top:10px;font-size:14px;color:var(--green);min-height:22px}
+
+  /* ---- quiz ---- */
+  .quizcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:18px}
+  .quizcard h3{margin:0 0 4px;font-size:18px}
+  .quizcard .sub{margin:0 0 14px;color:var(--muted);font-size:14px}
+  .pool{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:16px;min-height:38px;
+        background:#f7f8fa;border:1px dashed #cbd5e1;border-radius:10px;padding:9px}
+  .chip{width:34px;height:34px;border-radius:9px;background:var(--blue);color:#fff;font-size:16px;font-weight:600;
+        display:flex;align-items:center;justify-content:center;cursor:grab;user-select:none}
+  .chip.active{outline:3px solid #93c5fd;outline-offset:2px}
+  .matchrow{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f1f2f4}
+  .slot{width:42px;height:42px;flex:0 0 auto;border:2px dashed #cbd5e1;border-radius:9px;
+        display:flex;align-items:center;justify-content:center;background:#fafbfc}
+  .slot.over{border-color:var(--blue);background:var(--blue-soft)}
+  .slot .chip{cursor:grab}
+  .matchrow.ok .slot{border-style:solid;border-color:var(--green);background:var(--green-soft)}
+  .matchrow.bad .slot{border-style:solid;border-color:var(--red);background:var(--red-soft)}
+  .mname{font-size:15px}
+  .mc-q{margin-bottom:18px}
+  .mc-q .qt{font-weight:500;font-size:15px;margin-bottom:9px}
+  .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}
+  .opt{font-family:inherit;font-size:14px;text-align:left;border:1px solid var(--line);background:#fff;color:var(--ink);
+       padding:9px 13px;border-radius:9px;cursor:pointer}
+  .opt:hover{background:#f3f4f6}
+  .opt.ok{background:var(--green-soft);border-color:var(--green);color:#14532d}
+  .opt.bad{background:var(--red-soft);border-color:var(--red);color:#7f1d1d}
+  .opt:disabled{cursor:default}
+  .score{font-size:16px;font-weight:600;margin-top:8px}
+  .score.good{color:var(--green)} .score.mid{color:#d97706}
+
+  footer{margin-top:24px;color:#9ca3af;font-size:13px;text-align:center}
+  @media(max-width:680px){ body{padding:10px} header h1{font-size:20px} }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>ຮຽນຮູ້ File Explorer ໃນ Windows 11</h1>
+    <p>ສື່ການສອນແບບໂຕ້ຕອບ — ມີ 3 ພາກ: ຮຽນຮູ້ສ່ວນຕ່າງໆ, ການໃຊ້ງານຕົວຈິງ ແລະ ແບບເຝິກຫັດ.</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tabbtn on" data-sec="learn"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg> ຮຽນຮູ້ສ່ວນຕ່າງໆ</button>
+    <button class="tabbtn" data-sec="use"><svg class="ico" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> ການໃຊ້ງານຕົວຈິງ</button>
+    <button class="tabbtn" data-sec="quiz"><svg class="ico" viewBox="0 0 24 24"><path d="M9 11l3 3 8-8M21 12a9 9 0 1 1-5-8"/></svg> ແບບເຝິກຫັດ</button>
+  </div>
+
+  <!-- ===================== ພາກ 1: ຮຽນຮູ້ ===================== -->
+  <div class="sec on" id="learn">
+  <p style="margin:0 0 14px;color:var(--muted);font-size:15px">ຄລິກໃສ່ໝາຍເລກ <b>1–8</b> ສີຟ້າເທິງຮູບ ຫຼື ກົດປຸ່ມ “ຕໍ່ໄປ” ເພື່ອອ່ານຄຳອະທິບາຍແຕ່ລະສ່ວນ.</p>
+  <div class="winwrap">
+  <div class="win" id="win">
+
+    <div class="tabbar hot" data-id="1">
+      <span class="num">1</span>
+      <div class="ftab"><svg class="ico" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Documents</div>
+      <svg class="ico" viewBox="0 0 24 24" style="color:#9ca3af"><path d="M12 5v14M5 12h14"/></svg>
+    </div>
+
+    <div class="toolbar hot" data-id="2">
+      <span class="num">2</span>
+      <span class="lbl"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New</span>
+      <svg class="ico" viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="6" cy="17" r="2"/><path d="M8 8l12 8M8 16L20 8"/></svg>
+      <svg class="ico" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>
+      <svg class="ico" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="2"/><rect x="9" y="2.5" width="6" height="4" rx="1"/></svg>
+      <svg class="ico" viewBox="0 0 24 24"><path d="M4 20h4L18 10l-4-4L4 16z"/></svg>
+      <svg class="ico" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 11l8-4M8 13l8 4"/></svg>
+      <svg class="ico" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+      <span class="sep">
+        <svg class="ico" viewBox="0 0 24 24"><path d="M3 6h11M3 12h7M3 18h4M17 5v13M14 15l3 3 3-3"/></svg>
+        <svg class="ico" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg>
+      </span>
+    </div>
+
+    <div class="navrow">
+      <div class="navbtns hot" data-id="3" style="border-radius:7px">
+        <span class="num">3</span>
+        <span style="width:22px"></span>
+        <svg class="ico" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        <svg class="ico" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <svg class="ico" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
+      </div>
+      <div class="addr hot" data-id="4" style="position:relative;padding-left:30px">
+        <span class="num">4</span>
+        <svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+        This PC <span class="chev">&rsaquo;</span> Documents
+      </div>
+      <div class="srch hot" data-id="5" style="position:relative;padding-left:30px">
+        <span class="num">5</span>
+        <svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M21 21l-4-4"/></svg>
+        ຄົ້ນຫາ
+      </div>
+    </div>
+
+    <div class="body">
+      <div class="navpane hot" data-id="6">
+        <span class="num">6</span>
+        <div class="navit on"><svg class="ico" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg> Home</div>
+        <div class="navit"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M4 18l5-4 4 3 3-2 5 4"/></svg> Gallery</div>
+        <div class="navit"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg> This PC</div>
+        <div class="navit sub"><svg class="ico" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg> Desktop</div>
+        <div class="navit sub"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M5 21h14"/></svg> Downloads</div>
+        <div class="navit sub"><svg class="ico" viewBox="0 0 24 24"><path d="M6 3h7l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M13 3v5h5"/></svg> Documents</div>
+        <div class="navit sub"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M4 18l5-4 4 3 3-2 5 4"/></svg> Pictures</div>
+      </div>
+
+      <div class="content hot" data-id="7">
+        <span class="num">7</span>
+        <div class="item"><svg class="ico big" viewBox="0 0 24 24" style="color:var(--folder);fill:#fef3d4"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Work</div>
+        <div class="item"><svg class="ico big" viewBox="0 0 24 24" style="color:var(--folder);fill:#fef3d4"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>School</div>
+        <div class="item"><svg class="ico big" viewBox="0 0 24 24" style="color:var(--folder);fill:#fef3d4"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Photos</div>
+        <div class="item"><svg class="ico big" viewBox="0 0 24 24" style="color:#2f6fd6;fill:#e1ecfb"><path d="M6 3h7l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M13 3v5h5"/></svg>report.docx</div>
+        <div class="item"><svg class="ico big" viewBox="0 0 24 24" style="color:#1f9d6a;fill:#dcf3e9"><path d="M6 3h7l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M13 3v5h5"/></svg>budget.xlsx</div>
+        <div class="item"><svg class="ico big" viewBox="0 0 24 24" style="color:#d2602c;fill:#fbe6da"><path d="M6 3h7l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M13 3v5h5"/></svg>lesson.pptx</div>
+      </div>
+    </div>
+
+    <div class="status hot" data-id="8">
+      <span class="num">8</span> 6 ລາຍການ
+    </div>
+
+  </div>
+  </div>
+
+  <div class="detail" id="detail">
+    <p class="hint">&#128072; ຄລິກໃສ່ໝາຍເລກສີຟ້າເທິງຮູບ ເພື່ອເລີ່ມຮຽນຮູ້ແຕ່ລະສ່ວນ.</p>
+  </div>
+
+  <div class="stepper">
+    <button class="btn" id="prev">&lsaquo; ກ່ອນໜ້າ</button>
+    <button class="btn primary" id="next">ຕໍ່ໄປ &rsaquo;</button>
+    <div class="dots" id="dots"></div>
+  </div>
+  </div>
+
+  <!-- ===================== ພາກ 2: ການໃຊ້ງານຕົວຈິງ ===================== -->
+  <div class="sec" id="use">
+    <p style="margin:0 0 14px;color:var(--muted);font-size:15px">ອ່ານຂັ້ນຕອນ ແລ້ວ <b>ລອງເຮັດເອງ</b> ໃນກ່ອງ Sandbox ດ້ານລຸ່ມ — ກົດປຸ່ມ ຫຼື ໃຊ້ປຸ່ມລັດກໍ່ໄດ້.</p>
+
+    <div class="howgrid">
+      <div class="card">
+        <h3><span class="cn"><svg class="ico" viewBox="0 0 24 24" style="color:inherit"><path d="M12 5v14M5 12h14"/></svg></span> ສ້າງໂຟນເດີໃໝ່</h3>
+        <ul class="steps">
+          <li><span class="sn">1</span><span>ໄປຫາບ່ອນທີ່ຢາກສ້າງ (ເຊັ່ນ Documents).</span></li>
+          <li><span class="sn">2</span><span>ກົດປຸ່ມ <b>New</b> (&#43;) ເທິງແຖບຄຳສັ່ງ ແລ້ວເລືອກ <b>Folder</b> &mdash; ຫຼື ຄລິກຂວາໃນບ່ອນວ່າງ &rsaquo; New &rsaquo; Folder.</span></li>
+          <li><span class="sn">3</span><span>ພິມຊື່ໂຟນເດີ ແລ້ວກົດ <span class="kbd">Enter</span>.</span></li>
+        </ul>
+        <p style="margin:12px 0 0;font-size:14px;color:var(--muted)">ປຸ່ມລັດ: <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">N</span></p>
+      </div>
+
+      <div class="card">
+        <h3><span class="cn"><svg class="ico" viewBox="0 0 24 24" style="color:inherit"><path d="M4 20h4L18 10l-4-4L4 16z"/></svg></span> ປ່ຽນຊື່ໄຟລ໌ / ໂຟນເດີ</h3>
+        <ul class="steps">
+          <li><span class="sn">1</span><span>ຄລິກໃສ່ໄຟລ໌ ຫຼື ໂຟນເດີ ໜຶ່ງເທື່ອ ເພື່ອເລືອກ.</span></li>
+          <li><span class="sn">2</span><span>ກົດປຸ່ມ <span class="kbd">F2</span> (ຫຼື ກົດປຸ່ມ <b>Rename</b> / ຄລິກຂວາ &rsaquo; Rename).</span></li>
+          <li><span class="sn">3</span><span>ພິມຊື່ໃໝ່ ແລ້ວກົດ <span class="kbd">Enter</span>.</span></li>
+        </ul>
+        <p style="margin:12px 0 0;font-size:14px;color:var(--muted)">&#9888;&#65039; ໄຟລ໌ບໍ່ຄວນລຶບສ່ວນນາມສະກຸນ ເຊັ່ນ .docx ອອກ.</p>
+      </div>
+
+      <div class="card">
+        <h3><span class="cn"><svg class="ico" viewBox="0 0 24 24" style="color:inherit"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg></span> ກັອບປີ້ ແລະ ວາງ (Copy &amp; Paste)</h3>
+        <ul class="steps">
+          <li><span class="sn">1</span><span>ຄລິກເລືອກໄຟລ໌ ຫຼື ໂຟນເດີ.</span></li>
+          <li><span class="sn">2</span><span>ກົດ <span class="kbd">Ctrl</span>+<span class="kbd">C</span> ເພື່ອກັອບປີ້ &mdash; ຫຼື <span class="kbd">Ctrl</span>+<span class="kbd">X</span> ເພື່ອ <b>ຕັດ/ຍ້າຍ</b>.</span></li>
+          <li><span class="sn">3</span><span>ໄປຫາໂຟນເດີປາຍທາງ ແລ້ວກົດ <span class="kbd">Ctrl</span>+<span class="kbd">V</span> ເພື່ອວາງ.</span></li>
+        </ul>
+        <p style="margin:12px 0 0;font-size:14px;color:var(--muted)">ຄວາມຕ່າງ: <b>Copy</b> = ມີ 2 ສຳເນົາ &nbsp;|&nbsp; <b>Cut</b> = ຍ້າຍໄປບ່ອນໃໝ່ (ບ່ອນເກົ່າຫາຍ).</p>
+      </div>
+    </div>
+
+    <h3 style="margin:22px 0 6px;font-size:18px;display:flex;align-items:center;gap:8px">
+      <svg class="ico" viewBox="0 0 24 24" style="color:var(--blue);width:22px;height:22px"><path d="M5 3l14 9-14 9V3z"/></svg> Sandbox &mdash; ລອງເຮັດເອງ
+    </h3>
+    <p style="margin:0 0 12px;color:var(--muted);font-size:14px">ເລືອກໄຟລ໌/ໂຟນເດີກ່ອນ ແລ້ວກົດປຸ່ມ. ໃຊ້ໄດ້ໝົດທັງ ສ້າງໃໝ່, ປ່ຽນຊື່, ກັອບປີ້, ວາງ, ລຶບ.</p>
+    <div class="sandbar">
+      <button class="sbtn" id="sb-new"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> ໂຟນເດີໃໝ່</button>
+      <button class="sbtn" id="sb-rename"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20h4L18 10l-4-4L4 16z"/></svg> ປ່ຽນຊື່ (F2)</button>
+      <button class="sbtn" id="sb-copy"><svg class="ico" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg> ກັອບປີ້</button>
+      <button class="sbtn" id="sb-cut"><svg class="ico" viewBox="0 0 24 24"><circle cx="6" cy="7" r="2"/><circle cx="6" cy="17" r="2"/><path d="M8 8l12 8M8 16L20 8"/></svg> ຕັດ</button>
+      <button class="sbtn" id="sb-paste"><svg class="ico" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="2"/><rect x="9" y="2.5" width="6" height="4" rx="1"/></svg> ວາງ</button>
+      <button class="sbtn" id="sb-del"><svg class="ico" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg> ລຶບ</button>
+    </div>
+    <div class="sandbox" id="sandbox"></div>
+    <div class="saylog" id="saylog"></div>
+  </div>
+
+  <!-- ===================== ພາກ 3: ແບບເຝິກຫັດ ===================== -->
+  <div class="sec" id="quiz">
+
+    <div class="quizcard">
+      <h3>ແບບເຝິກຫັດ 1 — ລາກໝາຍເລກໃສ່ຊື່ສ່ວນໃຫ້ຖືກ</h3>
+      <p class="sub">ລາກໝາຍເລກຈາກກ່ອງ ໄປວາງໃສ່ໜ້າຊື່ສ່ວນທີ່ຖືກຕ້ອງ &mdash; ຫຼື ກົດໝາຍເລກ ແລ້ວກົດໃສ່ຊ່ອງວ່າງກໍ່ໄດ້.</p>
+      <div class="pool" id="pool"></div>
+      <div id="matchlist"></div>
+      <div class="stepper" style="margin-top:14px">
+        <button class="btn primary" id="check-match">ກວດຄຳຕອບ</button>
+        <button class="btn" id="reset-match">ເລີ່ມໃໝ່</button>
+        <span class="score" id="match-score"></span>
+      </div>
+    </div>
+
+    <div class="quizcard">
+      <h3>ແບບເຝິກຫັດ 2 — ຄຳຖາມເລືອກຕອບ</h3>
+      <p class="sub">ກົດເລືອກຄຳຕອບທີ່ຖືກຕ້ອງ. ຖືກ = ສີຂຽວ, ຜິດ = ສີແດງ.</p>
+      <div id="mcq"></div>
+      <div class="score" id="mcq-score" style="margin-top:4px"></div>
+    </div>
+
+  </div>
+
+  <footer>ສ້າງເພື່ອການສອນວິຊາພື້ນຖານຄອມພິວເຕີ — Windows 11 File Explorer</footer>
+</div>
+
+<script>
+/* ---------- ພາກ 1: learn ---------- */
+const DATA = {
+ "1":["ແຖບ (Tabs)","ໃນ Windows 11 ເຮົາສາມາດເປີດຫຼາຍໂຟນເດີໃນໜ້າຕ່າງດຽວກັນ ໂດຍໃຊ້ແຖບ ຄືກັນກັບໃນ web browser. ກົດເຄື່ອງໝາຍ + ເພື່ອເປີດແຖບໃໝ່. ຊ່ວຍປະຢັດພື້ນທີ່ ບໍ່ຕ້ອງເປີດຫຼາຍໜ້າຕ່າງໃຫ້ຮົກ."],
+ "2":["ແຖບຄຳສັ່ງ (Toolbar)","ລວມປຸ່ມທີ່ໃຊ້ເລື້ອຍໆ: New (ສ້າງໂຟນເດີ/ໄຟລ໌ໃໝ່), Cut (ຕັດ), Copy (ກັອບປີ້), Paste (ວາງ), Rename (ປ່ຽນຊື່), Share (ແບ່ງປັນ), Delete (ລຶບ) ແລະ ປຸ່ມ Sort / View ສຳລັບຈັດລຽງ ແລະ ປ່ຽນຮູບແບບການສະແດງ."],
+ "3":["ປຸ່ມນຳທາງ (Back / Forward / Up)","ປຸ່ມລູກສອນ ໃຊ້ເຄື່ອນທີ່ໄປ-ມາ: ກັບໄປບ່ອນທີ່ຫາກໍ່ມາ, ໄປໜ້າ, ຂຶ້ນໄປໂຟນເດີແມ່ (ໂຟນເດີທີ່ຢູ່ເທິງກວ່າ)."],
+ "4":["ແຖບທີ່ຢູ່ (Address bar)","ບອກວ່າຕອນນີ້ເຮົາຢູ່ໂຟນເດີໃດ ໂດຍສະແດງເປັນເສັ້ນທາງ ເຊັ່ນ This PC › Documents. ຄລິກແຕ່ລະສ່ວນເພື່ອກະໂດດໄປ ຫຼື ພິມເສັ້ນທາງເອງກໍ່ໄດ້."],
+ "5":["ຊ່ອງຄົ້ນຫາ (Search box)","ພິມຊື່ໄຟລ໌ ຫຼື ໂຟນເດີ ທີ່ຢາກຫາ ມັນຈະຄົ້ນຫາພາຍໃນບ່ອນປັດຈຸບັນ. ເໝາະເມື່ອມີໄຟລ໌ຫຼາຍ ຈົນຫາດ້ວຍຕາບໍ່ເຫັນ."],
+ "6":["ແຖບນຳທາງ (Navigation pane)","ຢູ່ດ້ານຊ້າຍ ເປັນທາງລັດໄປຫາບ່ອນສຳຄັນ: Home, Gallery, This PC, Desktop, Downloads, Documents, Pictures. ຄລິກໜຶ່ງເທື່ອ ກໍ່ໄປຮອດເລີຍ."],
+ "7":["ພື້ນທີ່ສະແດງໄຟລ໌ (Content area)","ສ່ວນກາງ ສະແດງໄຟລ໌ ແລະ ໂຟນເດີ ທັງໝົດທີ່ຢູ່ໃນບ່ອນປັດຈຸບັນ. ດັບເບິລຄລິກ (ກົດສອງເທື່ອໄວໆ) ເພື່ອເປີດ."],
+ "8":["ແຖບສະຖານະ (Status bar)","ຢູ່ດ້ານລຸ່ມສຸດ ບອກຈຳນວນລາຍການທັງໝົດໃນໂຟນເດີ ແລະ ຈຳນວນທີ່ກຳລັງເລືອກຢູ່."]
+};
+const ids = Object.keys(DATA);
+let cur = 0, active = false;
+const detail = document.getElementById('detail');
+const dotsBox = document.getElementById('dots');
+ids.forEach((id,i)=>{ const d=document.createElement('div'); d.className='dot'; d.onclick=()=>select(i); dotsBox.appendChild(d); });
+const dots=[...dotsBox.children];
+function render(id){ const d=DATA[id];
+  detail.innerHTML='<div class="dhead"><span class="badge">'+id+'</span><span class="title">'+d[0]+'</span></div><p class="text">'+d[1]+'</p>'; }
+function select(i){ active=true; cur=i; const id=ids[i];
+  document.querySelectorAll('#win .hot').forEach(h=>h.classList.toggle('sel', h.dataset.id===id));
+  dots.forEach((dt,j)=>dt.classList.toggle('on', j===i));
+  render(id);
+  document.getElementById('prev').disabled = i===0;
+  document.getElementById('next').disabled = i===ids.length-1;
+  const sel=document.querySelector('#win .hot.sel'); if(sel) sel.scrollIntoView({block:'nearest',behavior:'smooth'}); }
+document.querySelectorAll('#win .hot').forEach(h=>{ h.addEventListener('click',()=>select(ids.indexOf(h.dataset.id))); });
+document.getElementById('next').onclick=()=>{ if(!active){select(0);return;} if(cur<ids.length-1) select(cur+1); };
+document.getElementById('prev').onclick=()=>{ if(cur>0) select(cur-1); };
+document.getElementById('prev').disabled=true;
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.tabbtn').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.tabbtn').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.sec').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    document.getElementById(b.dataset.sec).classList.add('on');
+  };
+});
+
+/* ---------- ພາກ 2: sandbox ---------- */
+let uid=1;
+let items=[
+ {id:uid++,name:'Work',type:'folder'},
+ {id:uid++,name:'School',type:'folder'},
+ {id:uid++,name:'report.docx',type:'file'},
+ {id:uid++,name:'budget.xlsx',type:'file'},
+];
+let selId=null, clip=null, clipMode=null;
+const sandbox=document.getElementById('sandbox');
+const saylog=document.getElementById('saylog');
+function iconFor(it){
+  if(it.type==='folder') return '<svg class="ico big" viewBox="0 0 24 24" style="color:#f4b740;fill:#fef3d4"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+  const e=(it.name.split('.').pop()||'').toLowerCase();
+  let c='#6b7280',f='#eef0f2';
+  if(e==='docx'||e==='doc'){c='#2f6fd6';f='#e1ecfb';}
+  else if(e==='xlsx'||e==='csv'){c='#1f9d6a';f='#dcf3e9';}
+  else if(e==='pptx'){c='#d2602c';f='#fbe6da';}
+  return '<svg class="ico big" viewBox="0 0 24 24" style="color:'+c+';fill:'+f+'"><path d="M6 3h7l5 5v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M13 3v5h5"/></svg>';
+}
+function say(msg){ saylog.textContent=msg; }
+function renderSandbox(editId){
+  sandbox.innerHTML='';
+  items.forEach(it=>{
+    const el=document.createElement('div');
+    el.className='sitem'+(it.id===selId?' on':'');
+    el.onclick=()=>{ selId=it.id; renderSandbox(); };
+    if(it.id===editId){
+      el.innerHTML=iconFor(it);
+      const inp=document.createElement('input');
+      inp.value=it.name; el.appendChild(inp);
+      setTimeout(()=>{ inp.focus(); inp.select(); },0);
+      const commit=()=>{ if(inp.value.trim()) it.name=inp.value.trim(); renderSandbox(); say('\u2714 ປ່ຽນຊື່ເປັນ "'+it.name+'" ແລ້ວ'); };
+      inp.onkeydown=(e)=>{ if(e.key==='Enter') commit(); if(e.key==='Escape') renderSandbox(); };
+      inp.onblur=commit;
+    } else {
+      el.innerHTML=iconFor(it)+'<span>'+it.name+'</span>';
+    }
+    sandbox.appendChild(el);
+  });
+  if(items.length===0) sandbox.innerHTML='<p style="color:#9ca3af;grid-column:1/-1;text-align:center;margin:30px 0">(ວ່າງເປົ່າ — ກົດ “ໂຟນເດີໃໝ່” ເພື່ອເລີ່ມ)</p>';
+}
+function sel(){ return items.find(i=>i.id===selId); }
+document.getElementById('sb-new').onclick=()=>{ const it={id:uid++,name:'ໂຟນເດີໃໝ່',type:'folder'}; items.push(it); selId=it.id; say('\u2714 ສ້າງໂຟນເດີ — ພິມຊື່ ແລ້ວກົດ Enter'); renderSandbox(it.id); };
+document.getElementById('sb-rename').onclick=()=>{ if(!sel()){say('\u26A0 ເລືອກໄຟລ໌/ໂຟນເດີກ່ອນ');return;} renderSandbox(selId); };
+document.getElementById('sb-copy').onclick=()=>{ if(!sel()){say('\u26A0 ເລືອກກ່ອນ');return;} clip=sel(); clipMode='copy'; say('\u2714 ກັອບປີ້ "'+clip.name+'" — ໄປກົດ “ວາງ”'); };
+document.getElementById('sb-cut').onclick=()=>{ if(!sel()){say('\u26A0 ເລືອກກ່ອນ');return;} clip=sel(); clipMode='cut'; say('\u2714 ຕັດ "'+clip.name+'" — ໄປກົດ “ວາງ”'); };
+document.getElementById('sb-paste').onclick=()=>{
+  if(!clip){say('\u26A0 ຍັງບໍ່ໄດ້ກັອບປີ້/ຕັດຫຍັງ');return;}
+  if(clipMode==='copy'){ const c={id:uid++,name:clip.name+' - Copy',type:clip.type}; items.push(c); selId=c.id; say('\u2714 ວາງສຳເນົາ "'+c.name+'" ແລ້ວ'); }
+  else { say('\u2714 ຍ້າຍ "'+clip.name+'" ມາບ່ອນນີ້ແລ້ວ'); clip=null; clipMode=null; }
+  renderSandbox();
+};
+document.getElementById('sb-del').onclick=()=>{ if(!sel()){say('\u26A0 ເລືອກກ່ອນ');return;} const n=sel().name; items=items.filter(i=>i.id!==selId); selId=null; say('\u2714 ລຶບ "'+n+'" ແລ້ວ'); renderSandbox(); };
+document.addEventListener('keydown',(e)=>{
+  if(!document.getElementById('use').classList.contains('on')) return;
+  if(e.target.tagName==='INPUT') return;
+  if(e.key==='F2'){ e.preventDefault(); document.getElementById('sb-rename').click(); }
+  else if(e.key==='Delete'){ document.getElementById('sb-del').click(); }
+  else if(e.ctrlKey && e.key.toLowerCase()==='c'){ document.getElementById('sb-copy').click(); }
+  else if(e.ctrlKey && e.key.toLowerCase()==='x'){ document.getElementById('sb-cut').click(); }
+  else if(e.ctrlKey && e.key.toLowerCase()==='v'){ document.getElementById('sb-paste').click(); }
+});
+renderSandbox();
+
+/* ---------- ພາກ 3a: drag-match ---------- */
+const pool=document.getElementById('pool');
+const matchlist=document.getElementById('matchlist');
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+let activeChip=null;
+function makeChip(n){
+  const c=document.createElement('div'); c.className='chip'; c.textContent=n; c.draggable=true; c.dataset.n=n;
+  c.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/plain',n); activeChip=c; });
+  c.addEventListener('click',e=>{ e.stopPropagation();
+    if(activeChip===c){ c.classList.remove('active'); activeChip=null; }
+    else { if(activeChip) activeChip.classList.remove('active'); activeChip=c; c.classList.add('active'); } });
+  return c;
+}
+function placeChip(chip,slot){
+  if(slot.firstChild){ pool.appendChild(slot.firstChild); }
+  slot.appendChild(chip);
+  if(activeChip){ activeChip.classList.remove('active'); activeChip=null; }
+  slot.closest('.matchrow').classList.remove('ok','bad');
+}
+function buildMatch(){
+  pool.innerHTML=''; matchlist.innerHTML=''; activeChip=null;
+  document.getElementById('match-score').textContent='';
+  shuffle(ids).forEach(n=>pool.appendChild(makeChip(n)));
+  shuffle(ids).forEach(n=>{
+    const row=document.createElement('div'); row.className='matchrow'; row.dataset.correct=n;
+    const slot=document.createElement('div'); slot.className='slot';
+    slot.addEventListener('dragover',e=>{ e.preventDefault(); slot.classList.add('over'); });
+    slot.addEventListener('dragleave',()=>slot.classList.remove('over'));
+    slot.addEventListener('drop',e=>{ e.preventDefault(); slot.classList.remove('over'); if(activeChip) placeChip(activeChip,slot); });
+    slot.addEventListener('click',()=>{ if(activeChip) placeChip(activeChip,slot);
+      else if(slot.firstChild){ pool.appendChild(slot.firstChild); slot.closest('.matchrow').classList.remove('ok','bad'); } });
+    const name=document.createElement('div'); name.className='mname'; name.textContent=DATA[n][0];
+    row.appendChild(slot); row.appendChild(name); matchlist.appendChild(row);
+  });
+}
+pool.addEventListener('dragover',e=>e.preventDefault());
+pool.addEventListener('drop',e=>{ e.preventDefault(); if(activeChip) pool.appendChild(activeChip); });
+pool.addEventListener('click',()=>{ if(activeChip){ pool.appendChild(activeChip); activeChip.classList.remove('active'); activeChip=null; } });
+document.getElementById('check-match').onclick=()=>{
+  let ok=0;
+  document.querySelectorAll('.matchrow').forEach(row=>{
+    const chip=row.querySelector('.slot .chip');
+    row.classList.remove('ok','bad');
+    if(chip && chip.dataset.n===row.dataset.correct){ row.classList.add('ok'); ok++; }
+    else if(chip){ row.classList.add('bad'); }
+  });
+  const s=document.getElementById('match-score');
+  s.textContent='ໄດ້ '+ok+' / '+ids.length+' ຄະແນນ';
+  s.className='score '+(ok===ids.length?'good':(ok>=5?'mid':''));
+};
+document.getElementById('reset-match').onclick=buildMatch;
+buildMatch();
+
+/* ---------- ພາກ 3b: MCQ ---------- */
+const MCQ=[
+ {q:"ຖ້າຢາກສ້າງໂຟນເດີໃໝ່ ໃຊ້ປຸ່ມໃດ?",o:["New (+)","Delete","Search","Back"],a:0},
+ {q:"ປຸ່ມ F2 ໃຊ້ເຮັດຫຍັງ?",o:["ລຶບໄຟລ໌","ປ່ຽນຊື່ (Rename)","ກັອບປີ້","ສ້າງໂຟນເດີ"],a:1},
+ {q:"ຢາກກັອບປີ້ໄຟລ໌ ກົດປຸ່ມລັດໃດ?",o:["Ctrl + V","Ctrl + Z","Ctrl + C","Ctrl + P"],a:2},
+ {q:"ແຖບນຳທາງ (Navigation pane) ຢູ່ດ້ານໃດຂອງໜ້າຕ່າງ?",o:["ດ້ານຂວາ","ດ້ານເທິງ","ດ້ານລຸ່ມ","ດ້ານຊ້າຍ"],a:3},
+ {q:"ຢາກເປີດໄຟລ໌ ຫຼື ໂຟນເດີ ເຮັດແນວໃດ?",o:["ດັບເບິລຄລິກ (ກົດສອງເທື່ອ)","ຄລິກໜຶ່ງເທື່ອ","ກົດ Delete","ກົດ Esc"],a:0},
+ {q:"Ctrl + X ແຕກຕ່າງຈາກ Ctrl + C ແນວໃດ?",o:["ຄືກັນທຸກຢ່າງ","X = ຍ້າຍ (ບ່ອນເກົ່າຫາຍ)","X = ລຶບຖິ້ມ","X = ປ່ຽນຊື່"],a:1},
+];
+let mcqDone=0, mcqRight=0;
+const mcqBox=document.getElementById('mcq');
+MCQ.forEach((item,qi)=>{
+  const wrap=document.createElement('div'); wrap.className='mc-q';
+  wrap.innerHTML='<div class="qt">'+(qi+1)+'. '+item.q+'</div>';
+  const opts=document.createElement('div'); opts.className='opts';
+  item.o.forEach((txt,oi)=>{
+    const b=document.createElement('button'); b.className='opt'; b.textContent=txt;
+    b.onclick=()=>{
+      [...opts.children].forEach(x=>x.disabled=true);
+      if(oi===item.a){ b.classList.add('ok'); mcqRight++; }
+      else { b.classList.add('bad'); opts.children[item.a].classList.add('ok'); }
+      mcqDone++;
+      const sc=document.getElementById('mcq-score');
+      sc.textContent='ໄດ້ '+mcqRight+' / '+MCQ.length+' ຄະແນນ'+(mcqDone===MCQ.length?'  (ຄົບແລ້ວ!)':'');
+      sc.className='score '+(mcqDone===MCQ.length?(mcqRight===MCQ.length?'good':(mcqRight>=Math.ceil(MCQ.length/2)?'mid':'')):'');
+    };
+    opts.appendChild(b);
+  });
+  wrap.appendChild(opts); mcqBox.appendChild(wrap);
+});
+</script>
+</body>
+</html>
